@@ -38,19 +38,22 @@ for i, row in stocks.iterrows():
             continue
 
         ma10 = weekly.rolling(10).mean()
+        ma20 = weekly.rolling(20).mean()
         ma30 = weekly.rolling(30).mean()
-        price = float(weekly.iloc[-1])
-        ma10_val = float(ma10.iloc[-1])
-        ma30_val = float(ma30.iloc[-1])
+
+        price     = float(weekly.iloc[-1])
+        ma10_val  = float(ma10.iloc[-1])
+        ma20_val  = float(ma20.iloc[-1]) if not pd.isna(ma20.iloc[-1]) else 0.0
+        ma30_val  = float(ma30.iloc[-1])
         ma30_prev = float(ma30.iloc[-2])
 
         if pd.isna(ma30_val) or ma30_val == 0:
             continue
 
         ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
-        gap = round((price - ma30_val) / ma30_val * 100, 1)
+        gap      = round((price - ma30_val) / ma30_val * 100, 1)
         prev_price = float(weekly.iloc[-2])
-        chg = round((price - prev_price) / prev_price * 100, 1)
+        chg      = round((price - prev_price) / prev_price * 100, 1)
         ma30_slope = round((ma30_val - ma30_prev) / ma30_prev * 100, 2)
 
         weekly_vol = df['Volume'].resample('W-FRI').sum().dropna()
@@ -59,17 +62,41 @@ for i, row in stocks.iterrows():
         else:
             vol_ratio = 1.0
 
-        recent8 = [int(v) for v in weekly.iloc[-8:].tolist()]
-
-        # 30주선 위에 있었던 연속 주수 계산
+        # 30주선 연속 돌파 주수
         prices_arr = weekly.values
-        ma30_arr = ma30.values
-        above_weeks = 0
+        ma10_arr   = ma10.values
+        ma30_arr   = ma30.values
+
+        above_ma30_weeks = 0
         for idx in range(len(prices_arr) - 1, -1, -1):
             if not pd.isna(ma30_arr[idx]) and prices_arr[idx] > ma30_arr[idx]:
-                above_weeks += 1
+                above_ma30_weeks += 1
             else:
                 break
+
+        # 10주선 연속 돌파 주수
+        above_ma10_weeks = 0
+        for idx in range(len(prices_arr) - 1, -1, -1):
+            if not pd.isna(ma10_arr[idx]) and prices_arr[idx] > ma10_arr[idx]:
+                above_ma10_weeks += 1
+            else:
+                break
+
+        # 24주 캔들 데이터 (주봉 OHLC)
+        weekly_ohlc = df[['Open','High','Low','Close']].resample('W-FRI').agg(
+            {'Open':'first','High':'max','Low':'min','Close':'last'}
+        ).dropna()
+        recent = weekly_ohlc.tail(24)
+        candles = [[int(r.Open), int(r.High), int(r.Low), int(r.Close)] for _, r in recent.iterrows()]
+
+        # 24주 이동평균선 값
+        def ma_line(series, n=24):
+            tail = series.tail(n).tolist()
+            return [int(v) if not pd.isna(v) and v != 0 else 0 for v in tail]
+
+        ma10_line = ma_line(ma10)
+        ma20_line = ma_line(ma20)
+        ma30_line = ma_line(ma30)
 
         if gap > 3 and chg > 2 and vol_ratio > 1.5 and ma30_slope > 0:
             signal = 'strong'
@@ -85,16 +112,20 @@ for i, row in stocks.iterrows():
             'sector': sector_map.get(code, '기타'),
             'price': int(price),
             'ma10': int(ma10_val) if not pd.isna(ma10_val) else 0,
+            'ma20': int(ma20_val),
             'ma30': int(ma30_val),
             'chg': chg,
             'ma10gap': ma10gap,
             'ma30gap': gap,
             'vol': vol_ratio,
             'ma30_slope': ma30_slope,
-            'rs': 50,
-            'weeks': recent8,
             'signal': signal,
-            'above_weeks': above_weeks,
+            'above_ma10_weeks': above_ma10_weeks,
+            'above_ma30_weeks': above_ma30_weeks,
+            'candles': candles,
+            'ma10_line': ma10_line,
+            'ma20_line': ma20_line,
+            'ma30_line': ma30_line,
         })
 
         if (i+1) % 50 == 0:

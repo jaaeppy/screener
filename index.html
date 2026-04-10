@@ -7,12 +7,9 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
-.wrap { max-width: 1300px; margin: 0 auto; padding: 24px 16px; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
 h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
-.green { color: #1D9E75; }
-.red { color: #E24B4A; }
-.amber { color: #BA7517; }
-.purple { color: #8B1A7E; }
+.green { color: #1D9E75; } .red { color: #E24B4A; } .amber { color: #BA7517; } .purple { color: #8B1A7E; }
 
 /* Stats */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -20,7 +17,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 .stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
 .stat-val { font-size: 24px; font-weight: 500; }
 
-/* Filter area */
+/* Filters */
 .filter-area { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 16px; }
 .filter-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .filter-label { font-size: 11px; color: #aaa; white-space: nowrap; padding-right: 2px; }
@@ -29,7 +26,6 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 .btn:hover:not(.active-market):not(.active-signal) { background: #f5f5f3; }
 .btn.active-market { background: #E6F1FB; color: #185FA5; border-color: #85B7EB; }
 .btn.active-signal { background: #EEEDFE; color: #534AB7; border-color: #AFA9EC; }
-
 .top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 .search { padding: 8px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 13px; width: 200px; outline: none; background: #fff; }
 
@@ -48,33 +44,35 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 /* Badges */
 .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
 .badge.strong { background: #EAF3DE; color: #3B6D11; }
-.badge.watch { background: #FAEEDA; color: #854F0B; }
-.badge.weak { background: #FCEBEB; color: #A32D2D; }
-.badge.bull { background: #EAF3DE; color: #3B6D11; }
-.badge.bear { background: #FCEBEB; color: #A32D2D; }
-.badge.first { background: #FDE8F8; color: #8B1A7E; }
-.badge.weeks { background: #F0F0F0; color: #555; }
-.kospi { background: #E6F1FB; color: #185FA5; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.badge.watch  { background: #FAEEDA; color: #854F0B; }
+.badge.weak   { background: #FCEBEB; color: #A32D2D; }
+.badge.bull   { background: #EAF3DE; color: #3B6D11; }
+.badge.bear   { background: #FCEBEB; color: #A32D2D; }
+.badge.first  { background: #FDE8F8; color: #8B1A7E; }
+.badge.weeks  { background: #F0F0F0; color: #555; }
+.kospi  { background: #E6F1FB; color: #185FA5; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
 .kosdaq { background: #EEEDFE; color: #534AB7; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
 .sector-tag { background: #F1EFE8; color: #5F5E5A; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
 
-/* Bar / mini chart */
+/* Bar */
 .bar-wrap { display: flex; align-items: center; gap: 6px; }
-.bar-bg { flex: 1; height: 5px; background: #f0f0f0; border-radius: 3px; min-width: 50px; overflow: hidden; }
+.bar-bg { flex: 1; height: 5px; background: #f0f0f0; border-radius: 3px; min-width: 40px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 3px; }
-.mini { display: flex; align-items: flex-end; gap: 2px; height: 24px; }
-.mini div { width: 5px; border-radius: 1px 1px 0 0; opacity: 0.75; }
 
-/* ── Desktop: Table ── */
-.table-wrap { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow: hidden; }
+/* Desktop table */
+.table-wrap { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { padding: 10px 14px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; white-space: nowrap; background: #fafafa; }
+th { padding: 10px 12px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; white-space: nowrap; background: #fafafa; }
 th:hover { color: #333; }
-td { padding: 10px 14px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; }
+td { padding: 8px 12px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafaf8; }
-.sector-group-row td { background: #f7f6f3; font-size: 12px; font-weight: 600; color: #555; padding: 8px 14px; border-bottom: 0.5px solid #eee; border-top: 0.5px solid #eee; }
+.sector-group-row td { background: #f7f6f3; font-size: 12px; font-weight: 600; color: #555; padding: 8px 12px; border-bottom: 0.5px solid #eee; border-top: 0.5px solid #eee; }
 .sector-group-row:first-child td { border-top: none; }
+
+/* Chart legend */
+.chart-legend { display: flex; gap: 8px; font-size: 10px; color: #aaa; margin-top: 3px; }
+.legend-dot { display: inline-block; width: 20px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 2px; }
 
 /* Tooltip */
 th[data-tip] { position: relative; }
@@ -89,47 +87,39 @@ th[data-tip]::after {
 }
 th[data-tip]:hover::after { opacity: 1; }
 
-/* ── Mobile: Cards ── */
+/* Mobile cards */
 .card-list { display: none; }
 .card { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 14px; margin-bottom: 10px; }
 .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 .card-name { font-size: 15px; font-weight: 600; }
 .card-code { font-size: 11px; color: #aaa; margin-top: 2px; }
 .card-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-.card-meta { display: flex; gap: 6px; margin-bottom: 10px; }
+.card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .card-divider { height: 0.5px; background: #f0f0f0; margin-bottom: 10px; }
-.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-bottom: 10px; }
 .card-item-label { font-size: 11px; color: #aaa; margin-bottom: 2px; }
 .card-item-val { font-size: 13px; font-weight: 500; }
-.card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid #f0f0f0; }
+.card-chart { border-radius: 8px; overflow: hidden; background: #fafafa; margin-bottom: 6px; }
+.card-chart-legend { display: flex; gap: 10px; font-size: 10px; color: #aaa; padding: 0 2px 4px; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 0.5px solid #f0f0f0; }
+.card-breaks { display: flex; gap: 8px; }
+.card-break-item { font-size: 11px; }
+.card-break-label { color: #aaa; margin-right: 3px; }
+.card-sector-header { font-size: 12px; font-weight: 600; color: #555; background: #f7f6f3; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; margin-top: 4px; }
 
-/* Mobile sector group header */
-.card-sector-header {
-  font-size: 12px; font-weight: 600; color: #555;
-  background: #f7f6f3; border-radius: 8px;
-  padding: 8px 12px; margin-bottom: 8px; margin-top: 4px;
-}
-
-/* ── Responsive breakpoints ── */
 @media (max-width: 768px) {
   .wrap { padding: 16px 12px; }
   h1 { font-size: 17px; margin-bottom: 14px; }
-
   .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
   .stat { padding: 12px; }
   .stat-val { font-size: 20px; }
-
   .filter-divider { display: none; }
   .filter-area { gap: 10px; margin-bottom: 12px; }
-  .filter-group { gap: 5px; }
   .btn { font-size: 12px; padding: 5px 11px; }
-
   .top-row { gap: 8px; margin-bottom: 12px; }
   .search { width: 100%; }
-
   .sector-btns { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .sector-btns::-webkit-scrollbar { display: none; }
-
   .table-wrap { display: none; }
   .card-list { display: block; }
 }
@@ -148,15 +138,15 @@ th[data-tip]:hover::after { opacity: 1; }
     <div class="filter-area">
       <div class="filter-group">
         <span class="filter-label">시장</span>
-        <button class="btn" id="btn-KOSPI" onclick="setMarket('KOSPI',this)">코스피</button>
-        <button class="btn" id="btn-KOSDAQ" onclick="setMarket('KOSDAQ',this)">코스닥</button>
+        <button class="btn" id="btn-KOSPI"   onclick="setMarket('KOSPI',this)">코스피</button>
+        <button class="btn" id="btn-KOSDAQ"  onclick="setMarket('KOSDAQ',this)">코스닥</button>
       </div>
       <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">신호</span>
-        <button class="btn" id="btn-strong" onclick="setSignal('strong',this)">강한돌파</button>
-        <button class="btn" id="btn-watch" onclick="setSignal('watch',this)">관찰중</button>
-        <button class="btn" id="btn-first" onclick="setSignal('first',this)">최초돌파</button>
+        <button class="btn" id="btn-strong"  onclick="setSignal('strong',this)">강한돌파</button>
+        <button class="btn" id="btn-watch"   onclick="setSignal('watch',this)">관찰중</button>
+        <button class="btn" id="btn-first"   onclick="setSignal('first',this)">최초돌파</button>
       </div>
     </div>
     <input class="search" type="text" placeholder="종목명 검색..." oninput="render()" id="search">
@@ -180,10 +170,11 @@ th[data-tip]:hover::after { opacity: 1; }
           <th onclick="sort('ma10gap')">10주선 괴리율</th>
           <th onclick="sort('ma30gap')">30주선 괴리율</th>
           <th onclick="sort('vol')" data-tip="이번 주 거래량 ÷ 직전 10주 평균 거래량&#10;2x 이상: 강한 거래 (초록)&#10;1x~2x: 보통 (주황)&#10;1x 미만: 약한 거래 (빨강)">거래량강도</th>
-          <th>주간흐름</th>
-          <th onclick="sort('above_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음으로 30주선 위로 올라온 종목">돌파</th>
+          <th>6개월 차트</th>
+          <th onclick="sort('above_ma10_weeks')" data-tip="10주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주선 돌파</th>
+          <th onclick="sort('above_ma30_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 30주선 위로 올라온 종목">30주선 돌파</th>
           <th onclick="sort('signal')" data-tip="강한돌파: 30주선 괴리율 &gt;3% AND&#10;주간등락 &gt;2% AND 거래량강도 &gt;1.5x&#10;AND 30주선 기울기 우상향&#10;&#10;관찰중: 30주선 위 AND 30주선 우상향&#10;&#10;이탈: 위 조건 미충족">신호</th>
-          <th onclick="sort('ma_align')" data-tip="정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
+          <th data-tip="정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -211,9 +202,8 @@ function buildSectorBtns() {
   const etcCount = data.filter(d => d.sector === '기타').length;
   document.getElementById('sectorBtns').innerHTML = sectors.map(s => {
     const count = s === '전체' ? data.length : data.filter(d => d.sector === s).length;
-    const isActive = s === '전체' ? 'active' : '';
     const val = s === '전체' ? 'all' : s;
-    return `<button class="sector-btn ${isActive}" onclick="setSector('${val}',this)">${s} <span style="color:#aaa">${count}</span></button>`;
+    return `<button class="sector-btn ${s==='전체'?'active':''}" onclick="setSector('${val}',this)">${s} <span style="color:#aaa">${count}</span></button>`;
   }).join('') + (etcCount > 0 ? `<button class="sector-btn" onclick="setSector('기타',this)">기타 <span style="color:#aaa">${etcCount}</span></button>` : '');
 }
 
@@ -223,130 +213,185 @@ function setMarket(v, el) {
   if (filterMarket !== 'all') el.classList.add('active-market');
   render();
 }
-
 function setSignal(v, el) {
   filterSignal = filterSignal === v ? 'all' : v;
   document.querySelectorAll('#btn-strong,#btn-watch,#btn-first').forEach(b => b.classList.remove('active-signal'));
   if (filterSignal !== 'all') el.classList.add('active-signal');
   render();
 }
-
 function setSector(s, el) {
-  if (activeSector === s) {
-    activeSector = 'all';
-    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.sector-btn').classList.add('active');
-  } else {
-    activeSector = s;
-    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-  }
+  activeSector = activeSector === s ? 'all' : s;
+  document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+  if (activeSector === 'all') document.querySelector('.sector-btn').classList.add('active');
+  else el.classList.add('active');
   render();
 }
-
 function sort(k) {
-  if (sortKey === k) sortDir *= -1;
-  else { sortKey = k; sortDir = 1; }
+  sortDir = sortKey === k ? sortDir * -1 : 1;
+  sortKey = k;
   render();
 }
-
 function sigOrd(s) { return s === 'strong' ? 0 : s === 'watch' ? 1 : 2; }
-
 function fmtGap(v) {
   if (v == null || isNaN(v)) return '<span style="color:#ccc">—</span>';
   const c = v >= 0 ? '#1D9E75' : '#E24B4A';
   return `<span style="color:${c};font-weight:500">${v >= 0 ? '+' : ''}${v}%</span>`;
 }
 
-function badges(d) {
-  const sig = { strong: '<span class="badge strong">강한돌파</span>', watch: '<span class="badge watch">관찰중</span>', weak: '<span class="badge weak">이탈</span>' };
-  const brk = d.above_weeks == null ? '' : d.above_weeks === 1 ? '<span class="badge first">최초돌파</span>' : d.above_weeks > 0 ? `<span class="badge weeks">${d.above_weeks}주째</span>` : '';
-  const aln = (d.ma10 == null || d.ma30 == null) ? '' : d.ma10 > d.ma30 ? '<span class="badge bull">정배열</span>' : '<span class="badge bear">역배열</span>';
-  return { sig: sig[d.signal], brk, aln };
+// ── 돌파 배지 ──────────────────────────────────
+function breakBadge(weeks) {
+  if (weeks == null) return '<span style="color:#ccc">—</span>';
+  if (weeks === 1)   return '<span class="badge first">최초돌파</span>';
+  if (weeks > 1)     return `<span class="badge weeks">${weeks}주째</span>`;
+  return '<span style="color:#ccc">—</span>';
 }
 
+// ── SVG 캔들차트 ────────────────────────────────
+function chartSvg(candles, ma10, ma20, ma30, w, h) {
+  if (!candles || !candles.length) return '';
+
+  const allVals = [
+    ...candles.flatMap(c => [c[1], c[2]]),       // high, low
+    ...ma10.filter(v => v > 0),
+    ...ma20.filter(v => v > 0),
+    ...ma30.filter(v => v > 0)
+  ];
+  if (!allVals.length) return '';
+
+  const lo = Math.min(...allVals);
+  const hi = Math.max(...allVals);
+  const range = hi - lo || 1;
+  const pad = { t: 4, b: 4, l: 2, r: 2 };
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const n  = candles.length;
+  const slotW = iw / n;
+  const cw    = Math.max(1, slotW * 0.55);
+
+  const py = v => pad.t + ih - ((v - lo) / range * ih);
+  const px = i => pad.l + (i + 0.5) * slotW;
+
+  let s = `<svg width="${w}" height="${h}" style="display:block;overflow:visible">`;
+
+  // candles
+  candles.forEach(([o, hh, l, c], i) => {
+    const x = px(i);
+    const bull = c >= o;
+    const col  = bull ? '#1D9E75' : '#E24B4A';
+    const top  = Math.min(py(o), py(c));
+    const bh   = Math.max(1, Math.abs(py(o) - py(c)));
+    s += `<line x1="${x}" y1="${py(hh)}" x2="${x}" y2="${py(l)}" stroke="${col}" stroke-width="1" opacity="0.6"/>`;
+    s += `<rect x="${x - cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" opacity="0.85"/>`;
+  });
+
+  // MA lines
+  const line = (vals, color) => {
+    let d = '', prev = null;
+    vals.forEach((v, i) => {
+      if (!v) { prev = null; return; }
+      const x = px(i), y = py(v);
+      d += prev === null ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`;
+      prev = v;
+    });
+    if (d) s += `<path d="${d}" stroke="${color}" stroke-width="1.5" fill="none"/>`;
+  };
+
+  line(ma10, '#F5A623');  // 주황 — 10주선
+  line(ma20, '#9B59B6');  // 보라 — 20주선
+  line(ma30, '#3498DB');  // 파랑 — 30주선
+
+  s += '</svg>';
+  return s;
+}
+
+// ── 공통 배지 계산 ──────────────────────────────
+function getBadges(d) {
+  const sig = { strong: '<span class="badge strong">강한돌파</span>', watch: '<span class="badge watch">관찰중</span>', weak: '<span class="badge weak">이탈</span>' };
+  const aln = (d.ma10 && d.ma30)
+    ? (d.ma10 > d.ma30 ? '<span class="badge bull">정배열</span>' : '<span class="badge bear">역배열</span>')
+    : '';
+  return { sig: sig[d.signal], aln };
+}
+
+// ── 테이블 행 ───────────────────────────────────
 function rowHtml(d) {
-  const gc = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
+  const gc  = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
   const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
-  const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
-  const vw = Math.min(100, Math.round((d.vol / 5) * 100));
-  const mx = Math.max(...d.weeks), mn = Math.min(...d.weeks), rng = mx - mn || 1;
-  const mc = d.signal === 'strong' ? '#1D9E75' : d.signal === 'watch' ? '#BA7517' : '#E24B4A';
-  const bars = d.weeks.map(w => `<div style="height:${Math.max(3,Math.round(((w-mn)/rng)*20))}px;background:${mc};width:5px;border-radius:1px 1px 0 0"></div>`).join('');
-  const { sig, brk, aln } = badges(d);
+  const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
+  const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
+  const { sig, aln } = getBadges(d);
+  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 52);
   return `<tr>
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
     <td style="color:${gc};font-weight:500">${d.chg>=0?'+':''}${d.chg}%</td>
     <td>${fmtGap(d.ma10gap)}</td>
     <td style="color:${gapc};font-weight:500">${d.ma30gap>=0?'+':''}${d.ma30gap}%</td>
-    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc}">${d.vol}x</span></div></td>
-    <td><div class="mini">${bars}</div></td>
-    <td>${brk||'<span style="color:#ccc">—</span>'}</td>
+    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc};margin-left:2px">${d.vol}x</span></div></td>
+    <td style="padding-top:6px;padding-bottom:6px">
+      ${chart || '<span style="color:#ccc">—</span>'}
+      ${chart ? `<div class="chart-legend"><span><span class="legend-dot" style="background:#F5A623"></span>10주</span><span><span class="legend-dot" style="background:#9B59B6"></span>20주</span><span><span class="legend-dot" style="background:#3498DB"></span>30주</span></div>` : ''}
+    </td>
+    <td>${breakBadge(d.above_ma10_weeks)}</td>
+    <td>${breakBadge(d.above_ma30_weeks)}</td>
     <td>${sig}</td>
     <td>${aln||'<span style="color:#ccc">—</span>'}</td>
   </tr>`;
 }
 
+// ── 모바일 카드 ─────────────────────────────────
 function cardHtml(d) {
-  const gc = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
+  const gc  = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
   const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
-  const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
-  const vw = Math.min(100, Math.round((d.vol / 5) * 100));
-  const mx = Math.max(...d.weeks), mn = Math.min(...d.weeks), rng = mx - mn || 1;
-  const mc = d.signal === 'strong' ? '#1D9E75' : d.signal === 'watch' ? '#BA7517' : '#E24B4A';
-  const bars = d.weeks.map(w => `<div style="height:${Math.max(3,Math.round(((w-mn)/rng)*20))}px;background:${mc};width:5px;border-radius:1px 1px 0 0"></div>`).join('');
-  const { sig, brk, aln } = badges(d);
+  const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
+  const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
+  const { sig, aln } = getBadges(d);
+  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 110);
   return `<div class="card">
     <div class="card-header">
-      <div>
-        <div class="card-name">${d.name}</div>
-        <div class="card-code">${d.code}</div>
-      </div>
-      <div class="card-badges">${sig}${brk ? ' ' + brk : ''}</div>
+      <div><div class="card-name">${d.name}</div><div class="card-code">${d.code}</div></div>
+      <div class="card-badges">${sig}</div>
     </div>
     <div class="card-meta">
       <span class="${d.market==='KOSPI'?'kospi':'kosdaq'}">${d.market}</span>
       <span class="sector-tag">${d.sector||'기타'}</span>
-      ${aln || ''}
+      ${aln}
     </div>
     <div class="card-divider"></div>
     <div class="card-grid">
-      <div>
-        <div class="card-item-label">현재가</div>
-        <div class="card-item-val">${d.price.toLocaleString()}원</div>
-      </div>
-      <div>
-        <div class="card-item-label">주간등락</div>
-        <div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div>
-      </div>
-      <div>
-        <div class="card-item-label">10주선 괴리율</div>
-        <div class="card-item-val">${fmtGap(d.ma10gap)}</div>
-      </div>
-      <div>
-        <div class="card-item-label">30주선 괴리율</div>
-        <div class="card-item-val" style="color:${gapc}">${d.ma30gap>=0?'+':''}${d.ma30gap}%</div>
-      </div>
+      <div><div class="card-item-label">현재가</div><div class="card-item-val">${d.price.toLocaleString()}원</div></div>
+      <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
+      <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
+      <div><div class="card-item-label">30주선 괴리율</div><div class="card-item-val" style="color:${gapc}">${d.ma30gap>=0?'+':''}${d.ma30gap}%</div></div>
     </div>
+    ${chart ? `<div class="card-chart">${chart}</div>
+    <div class="card-chart-legend">
+      <span><span class="legend-dot" style="background:#F5A623;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>10주선</span>
+      <span><span class="legend-dot" style="background:#9B59B6;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>20주선</span>
+      <span><span class="legend-dot" style="background:#3498DB;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>30주선</span>
+    </div>` : ''}
     <div class="card-footer">
-      <div class="bar-wrap" style="flex:1;margin-right:12px">
+      <div class="card-breaks">
+        <span class="card-break-item"><span class="card-break-label">10주선</span>${breakBadge(d.above_ma10_weeks)}</span>
+        <span class="card-break-item"><span class="card-break-label">30주선</span>${breakBadge(d.above_ma30_weeks)}</span>
+      </div>
+      <div class="bar-wrap" style="width:120px">
         <span style="font-size:11px;color:#aaa;margin-right:4px">거래량</span>
         <div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div>
         <span style="font-size:12px;color:${vc};margin-left:4px">${d.vol}x</span>
       </div>
-      <div class="mini">${bars}</div>
     </div>
   </div>`;
 }
 
+// ── 렌더 ────────────────────────────────────────
 function render() {
   const q = document.getElementById('search').value.toLowerCase();
   let rows = data.filter(d => {
     if (filterMarket !== 'all' && d.market !== filterMarket) return false;
     if (filterSignal === 'strong' && d.signal !== 'strong') return false;
-    if (filterSignal === 'watch' && d.signal !== 'watch') return false;
-    if (filterSignal === 'first' && d.above_weeks !== 1) return false;
+    if (filterSignal === 'watch'  && d.signal !== 'watch')  return false;
+    if (filterSignal === 'first'  && d.above_ma30_weeks !== 1) return false;
     if (activeSector !== 'all' && d.sector !== activeSector) return false;
     if (q && !d.name.toLowerCase().includes(q) && !d.code.includes(q)) return false;
     return true;
@@ -360,40 +405,36 @@ function render() {
     return typeof av === 'string' ? av.localeCompare(bv) * sortDir : (av - bv) * sortDir;
   });
 
-  const strong = data.filter(d => d.signal === 'strong').length;
-  const watch = data.filter(d => d.signal === 'watch').length;
-  const firstBreak = data.filter(d => d.above_weeks === 1).length;
+  const strong     = data.filter(d => d.signal === 'strong').length;
+  const watch      = data.filter(d => d.signal === 'watch').length;
+  const firstBreak = data.filter(d => d.above_ma30_weeks === 1).length;
 
   document.getElementById('stats').innerHTML = `
     <div class="stat"><div class="stat-label">전체 종목</div><div class="stat-val">${data.length}</div></div>
     <div class="stat"><div class="stat-label">강한돌파</div><div class="stat-val green">${strong}</div></div>
     <div class="stat"><div class="stat-label">관찰중</div><div class="stat-val amber">${watch}</div></div>
-    <div class="stat"><div class="stat-label">최초돌파</div><div class="stat-val purple">${firstBreak}</div></div>
+    <div class="stat"><div class="stat-label">최초돌파 (30주)</div><div class="stat-val purple">${firstBreak}</div></div>
   `;
-
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 
-  const emptyMsg = '<tr><td colspan="10" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+  const emptyRow  = '<tr><td colspan="11" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
   const emptyCard = '<div style="text-align:center;color:#aaa;padding:40px">조건에 맞는 종목이 없습니다</div>';
 
   if (!rows.length) {
-    document.getElementById('tbody').innerHTML = emptyMsg;
+    document.getElementById('tbody').innerHTML = emptyRow;
     document.getElementById('cardList').innerHTML = emptyCard;
     return;
   }
 
-  // 최초돌파: 업종별 그룹핑
   if (filterSignal === 'first') {
     const grouped = {};
     rows.forEach(d => { const sec = d.sector || '기타'; if (!grouped[sec]) grouped[sec] = []; grouped[sec].push(d); });
-    const sortedSectors = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
-
-    document.getElementById('tbody').innerHTML = sortedSectors.map(([sec, stocks]) =>
-      `<tr class="sector-group-row"><td colspan="10">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
+    const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
+    document.getElementById('tbody').innerHTML = sorted.map(([sec, stocks]) =>
+      `<tr class="sector-group-row"><td colspan="11">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
       stocks.map(rowHtml).join('')
     ).join('');
-
-    document.getElementById('cardList').innerHTML = sortedSectors.map(([sec, stocks]) =>
+    document.getElementById('cardList').innerHTML = sorted.map(([sec, stocks]) =>
       `<div class="card-sector-header">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></div>` +
       stocks.map(cardHtml).join('')
     ).join('');
