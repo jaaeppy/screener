@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>30주선 스크리너</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
+.wrap { max-width: 1300px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat { background: #fff; border-radius: 10px; padding: 14px; border: 0.5px solid #e5e5e5; }
+.stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.stat-val { font-size: 24px; font-weight: 500; }
+.green { color: #1D9E75; }
+.red { color: #E24B4A; }
+.amber { color: #BA7517; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; cursor: pointer; color: #555; }
+.btn.active { background: #E6F1FB; color: #185FA5; border-color: #85B7EB; }
+.btn:hover:not(.active) { background: #f5f5f3; }
+.sector-wrap { margin-bottom: 16px; }
+.sector-label { font-size: 12px; color: #888; margin-bottom: 8px; }
+.sector-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.sector-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #ddd; background: #fff; cursor: pointer; color: #555; white-space: nowrap; }
+.sector-btn.active { background: #EEEDFE; color: #534AB7; border-color: #AFA9EC; }
+.sector-btn:hover:not(.active) { background: #f5f5f3; }
+.search { padding: 8px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 13px; width: 200px; outline: none; background: #fff; }
+.table-wrap { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { padding: 10px 14px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; white-space: nowrap; background: #fafafa; }
+th:hover { color: #333; }
+td { padding: 10px 14px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.badge.strong { background: #EAF3DE; color: #3B6D11; }
+.badge.watch { background: #FAEEDA; color: #854F0B; }
+.badge.weak { background: #FCEBEB; color: #A32D2D; }
+.badge.bull { background: #EAF3DE; color: #3B6D11; }
+.badge.bear { background: #FCEBEB; color: #A32D2D; }
+.badge.first { background: #FDE8F8; color: #8B1A7E; }
+.badge.weeks { background: #F0F0F0; color: #555; }
+.kospi { background: #E6F1FB; color: #185FA5; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.kosdaq { background: #EEEDFE; color: #534AB7; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.sector-tag { background: #F1EFE8; color: #5F5E5A; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+.bar-wrap { display: flex; align-items: center; gap: 6px; }
+.bar-bg { flex: 1; height: 5px; background: #f0f0f0; border-radius: 3px; min-width: 50px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.mini { display: flex; align-items: flex-end; gap: 2px; height: 24px; }
+.mini div { width: 5px; border-radius: 1px 1px 0 0; opacity: 0.75; }
+.top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.updated { font-size: 12px; color: #aaa; }
+.empty { padding: 40px; text-align: center; color: #aaa; }
+.count { font-size: 12px; color: #888; margin-bottom: 12px; }
+
+/* Tooltip */
+th[data-tip] { position: relative; }
+th[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: #222; color: #fff; font-size: 11px; font-weight: 400;
+  padding: 7px 10px; border-radius: 7px; white-space: pre-line; line-height: 1.6;
+  min-width: 180px; max-width: 260px; text-align: left;
+  pointer-events: none; opacity: 0; z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: opacity 0.15s;
+}
+th[data-tip]:hover::after { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-row">
+    <h1>30주선 스크리너</h1>
+    <span class="updated" id="updated"></span>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="top-row">
+    <div class="filters" id="filters">
+      <button class="btn active" onclick="setFilter('all',this)">전체</button>
+      <button class="btn" onclick="setFilter('KOSPI',this)">코스피</button>
+      <button class="btn" onclick="setFilter('KOSDAQ',this)">코스닥</button>
+      <button class="btn" onclick="setFilter('strong',this)">강한돌파</button>
+      <button class="btn" onclick="setFilter('watch',this)">관찰중</button>
+      <button class="btn" onclick="setFilter('first',this)">최초돌파</button>
+    </div>
+    <input class="search" type="text" placeholder="종목명 검색..." oninput="render()" id="search">
+  </div>
+
+  <div class="sector-wrap">
+    <div class="sector-label">업종 필터</div>
+    <div class="sector-btns" id="sectorBtns"></div>
+  </div>
+
+  <div class="count" id="count"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sort('name')">종목</th>
+          <th onclick="sort('market')">시장</th>
+          <th onclick="sort('sector')">업종</th>
+          <th onclick="sort('price')">현재가</th>
+          <th onclick="sort('chg')">주간등락</th>
+          <th onclick="sort('ma10gap')">10주선 괴리율</th>
+          <th onclick="sort('ma30gap')">30주선 괴리율</th>
+          <th onclick="sort('ma30_slope')">30주선 기울기</th>
+          <th onclick="sort('vol')" data-tip="이번 주 거래량 ÷ 직전 10주 평균 거래량&#10;2x 이상: 강한 거래 (초록)&#10;1x~2x: 보통 (주황)&#10;1x 미만: 약한 거래 (빨강)">거래량강도</th>
+          <th>주간흐름</th>
+          <th onclick="sort('above_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음으로 30주선 위로 올라온 종목">돌파</th>
+          <th onclick="sort('signal')" data-tip="강한돌파: 30주선 괴리율 &gt;3% AND&#10;주간등락 &gt;2% AND 거래량강도 &gt;1.5x&#10;AND 30주선 기울기 우상향&#10;&#10;관찰중: 30주선 위 AND 30주선 우상향&#10;&#10;이탈: 위 조건 미충족">신호</th>
+          <th onclick="sort('ma_align')" data-tip="정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let data = [], filter = 'all', sortKey = 'signal', sortDir = 1, activeSector = 'all';
+
+fetch('screener_result.json')
+  .then(r => r.json())
+  .then(d => {
+    data = d;
+    document.getElementById('updated').textContent = '스캔 완료 · ' + data.length + '개 종목';
+    buildSectorBtns();
+    render();
+  });
+
+function buildSectorBtns() {
+  const sectors = ['전체', ...new Set(data.map(d => d.sector).filter(s => s && s !== '기타').sort())];
+  const etcCount = data.filter(d => d.sector === '기타').length;
+
+  document.getElementById('sectorBtns').innerHTML = sectors.map(s => {
+    const count = s === '전체' ? data.length : data.filter(d => d.sector === s).length;
+    const isActive = s === '전체' ? 'active' : '';
+    const val = s === '전체' ? 'all' : s;
+    return `<button class="sector-btn ${isActive}" onclick="setSector('${val}',this)">${s} <span style="color:#aaa">${count}</span></button>`;
+  }).join('') + (etcCount > 0 ? `<button class="sector-btn" onclick="setSector('기타',this)">기타 <span style="color:#aaa">${etcCount}</span></button>` : '');
+}
+
+function setFilter(f, el) {
+  filter = f;
+  document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function setSector(s, el) {
+  if (activeSector === s) {
+    activeSector = 'all';
+    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.sector-btn').classList.add('active'); // 전체 버튼
+  } else {
+    activeSector = s;
+    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  render();
+}
+
+function sort(k) {
+  if (sortKey === k) sortDir *= -1;
+  else { sortKey = k; sortDir = 1; }
+  render();
+}
+
+function sigOrd(s) { return s === 'strong' ? 0 : s === 'watch' ? 1 : 2; }
+
+function fmtGap(v) {
+  if (v == null || isNaN(v)) return '<span style="color:#ccc">—</span>';
+  const c = v >= 0 ? '#1D9E75' : '#E24B4A';
+  return `<span style="color:${c};font-weight:500">${v >= 0 ? '+' : ''}${v}%</span>`;
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let rows = data.filter(d => {
+    if (filter === 'KOSPI') return d.market === 'KOSPI';
+    if (filter === 'KOSDAQ') return d.market === 'KOSDAQ';
+    if (filter === 'strong') return d.signal === 'strong';
+    if (filter === 'watch') return d.signal === 'watch';
+    if (filter === 'first') return d.above_weeks === 1;
+    return true;
+  }).filter(d => {
+    if (activeSector === 'all') return true;
+    return d.sector === activeSector;
+  }).filter(d => !q || d.name.toLowerCase().includes(q) || d.code.includes(q));
+
+  rows.sort((a, b) => {
+    let av = sortKey === 'signal' ? sigOrd(a.signal) : a[sortKey];
+    let bv = sortKey === 'signal' ? sigOrd(b.signal) : b[sortKey];
+    if (av == null) av = -Infinity;
+    if (bv == null) bv = -Infinity;
+    return typeof av === 'string' ? av.localeCompare(bv) * sortDir : (av - bv) * sortDir;
+  });
+
+  const strong = data.filter(d => d.signal === 'strong').length;
+  const watch = data.filter(d => d.signal === 'watch').length;
+  const avgGap = (data.reduce((s, d) => s + d.ma30gap, 0) / data.length).toFixed(1);
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">전체 종목</div><div class="stat-val">${data.length}</div></div>
+    <div class="stat"><div class="stat-label">강한돌파</div><div class="stat-val green">${strong}</div></div>
+    <div class="stat"><div class="stat-label">관찰중</div><div class="stat-val amber">${watch}</div></div>
+    <div class="stat"><div class="stat-label">평균 30주선 괴리율</div><div class="stat-val ${parseFloat(avgGap) >= 0 ? 'green' : 'red'}">${avgGap}%</div></div>
+  `;
+
+  document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
+
+  if (!rows.length) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+    return;
+  }
+
+  document.getElementById('tbody').innerHTML = rows.map(d => {
+    const gc = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
+    const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
+    const sc = d.ma30_slope >= 0 ? '#1D9E75' : '#E24B4A';
+    const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
+    const vw = Math.min(100, Math.round((d.vol / 5) * 100));
+    const mx = Math.max(...d.weeks), mn = Math.min(...d.weeks), rng = mx - mn || 1;
+    const mc = d.signal === 'strong' ? '#1D9E75' : d.signal === 'watch' ? '#BA7517' : '#E24B4A';
+    const bars = d.weeks.map(w => `<div style="height:${Math.max(3, Math.round(((w-mn)/rng)*20))}px;background:${mc};width:5px;border-radius:1px 1px 0 0"></div>`).join('');
+    const badge = { strong: '<span class="badge strong">강한돌파</span>', watch: '<span class="badge watch">관찰중</span>', weak: '<span class="badge weak">이탈</span>' };
+    const breakBadge = d.above_weeks == null
+      ? '<span style="color:#ccc">—</span>'
+      : d.above_weeks === 1
+        ? '<span class="badge first">최초돌파</span>'
+        : d.above_weeks > 0
+          ? `<span class="badge weeks">${d.above_weeks}주째</span>`
+          : '<span style="color:#ccc">—</span>';
+    const alignBadge = (d.ma10 == null || d.ma30 == null)
+      ? '<span style="color:#ccc">—</span>'
+      : d.ma10 > d.ma30
+        ? '<span class="badge bull">정배열</span>'
+        : '<span class="badge bear">역배열</span>';
+    return `<tr>
+      <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa">${d.code}</div></td>
+      <td><span class="${d.market === 'KOSPI' ? 'kospi' : 'kosdaq'}">${d.market}</span></td>
+      <td><span class="sector-tag">${d.sector || '기타'}</span></td>
+      <td style="font-weight:500">${d.price.toLocaleString()}원</td>
+      <td style="color:${gc};font-weight:500">${d.chg >= 0 ? '+' : ''}${d.chg}%</td>
+      <td>${fmtGap(d.ma10gap)}</td>
+      <td style="color:${gapc};font-weight:500">${d.ma30gap >= 0 ? '+' : ''}${d.ma30gap}%</td>
+      <td style="color:${sc};font-weight:500">${d.ma30_slope >= 0 ? '+' : ''}${d.ma30_slope}%</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc}">${d.vol}x</span></div></td>
+      <td><div class="mini">${bars}</div></td>
+      <td>${breakBadge}</td>
+      <td>${badge[d.signal]}</td>
+      <td>${alignBadge}</td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
