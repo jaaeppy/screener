@@ -103,13 +103,10 @@ th[data-tip]:hover::after { opacity: 1; }
       <thead>
         <tr>
           <th onclick="sort('name')">종목</th>
-          <th onclick="sort('market')">시장</th>
-          <th onclick="sort('sector')">업종</th>
           <th onclick="sort('price')">현재가</th>
           <th onclick="sort('chg')">주간등락</th>
           <th onclick="sort('ma10gap')">10주선 괴리율</th>
           <th onclick="sort('ma30gap')">30주선 괴리율</th>
-          <th onclick="sort('ma30_slope')">30주선 기울기</th>
           <th onclick="sort('vol')" data-tip="이번 주 거래량 ÷ 직전 10주 평균 거래량&#10;2x 이상: 강한 거래 (초록)&#10;1x~2x: 보통 (주황)&#10;1x 미만: 약한 거래 (빨강)">거래량강도</th>
           <th>주간흐름</th>
           <th onclick="sort('above_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음으로 30주선 위로 올라온 종목">돌파</th>
@@ -123,7 +120,7 @@ th[data-tip]:hover::after { opacity: 1; }
 </div>
 
 <script>
-let data = [], filter = 'all', sortKey = 'signal', sortDir = 1, activeSector = 'all';
+let data = [], filter = 'all', sortKey = 'chg', sortDir = -1, activeSector = 'all';
 
 fetch('screener_result.json')
   .then(r => r.json())
@@ -216,14 +213,13 @@ function render() {
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 
   if (!rows.length) {
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
     return;
   }
 
   document.getElementById('tbody').innerHTML = rows.map(d => {
     const gc = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
     const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
-    const sc = d.ma30_slope >= 0 ? '#1D9E75' : '#E24B4A';
     const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
     const vw = Math.min(100, Math.round((d.vol / 5) * 100));
     const mx = Math.max(...d.weeks), mn = Math.min(...d.weeks), rng = mx - mn || 1;
@@ -243,14 +239,11 @@ function render() {
         ? '<span class="badge bull">정배열</span>'
         : '<span class="badge bear">역배열</span>';
     return `<tr>
-      <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa">${d.code}</div></td>
-      <td><span class="${d.market === 'KOSPI' ? 'kospi' : 'kosdaq'}">${d.market}</span></td>
-      <td><span class="sector-tag">${d.sector || '기타'}</span></td>
+      <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market === 'KOSPI' ? 'kospi' : 'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector || '기타'}</span></div></td>
       <td style="font-weight:500">${d.price.toLocaleString()}원</td>
       <td style="color:${gc};font-weight:500">${d.chg >= 0 ? '+' : ''}${d.chg}%</td>
       <td>${fmtGap(d.ma10gap)}</td>
       <td style="color:${gapc};font-weight:500">${d.ma30gap >= 0 ? '+' : ''}${d.ma30gap}%</td>
-      <td style="color:${sc};font-weight:500">${d.ma30_slope >= 0 ? '+' : ''}${d.ma30_slope}%</td>
       <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc}">${d.vol}x</span></div></td>
       <td><div class="mini">${bars}</div></td>
       <td>${breakBadge}</td>
