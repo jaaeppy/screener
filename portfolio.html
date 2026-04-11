@@ -66,7 +66,10 @@ tr:hover td { background: #fafaf8; }
 .kosdaq { background: #EEEDFE; color: #534AB7; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
 .sector-tag { background: #F1EFE8; color: #5F5E5A; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
 
-/* Remove btn */
+/* Action btns */
+.act-btns { display: flex; align-items: center; gap: 2px; }
+.act-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 12px; padding: 2px 5px; border-radius: 4px; line-height: 1; }
+.act-btn:hover { color: #534AB7; background: #EEEDFE; }
 .rm-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
 .rm-btn:hover { color: #E24B4A; background: #FCEBEB; }
 
@@ -178,6 +181,18 @@ function addStock(code, target) {
 function removeStock(code, target) {
   const key = target === 'watch' ? WATCH_KEY : HOLD_KEY;
   const list = getList(key).filter(c => c !== code);
+  saveList(key, list);
+  render();
+}
+
+function moveStock(code, target, dir) {
+  const key = target === 'watch' ? WATCH_KEY : HOLD_KEY;
+  const list = getList(key);
+  const idx = list.indexOf(code);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= list.length) return;
+  [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
   saveList(key, list);
   render();
 }
@@ -328,7 +343,11 @@ function renderSection(type, codes, label) {
     const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#F5A623' : '#E24B4A';
     const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 52);
     tableHtml += `<tr>
-      <td><button class="rm-btn" onclick="removeStock('${d.code}','${type}')" title="제거">✕</button></td>
+      <td><div class="act-btns">
+        <button class="act-btn" onclick="moveStock('${d.code}','${type}',-1)" title="위로">▲</button>
+        <button class="act-btn" onclick="moveStock('${d.code}','${type}',1)" title="아래로">▼</button>
+        <button class="rm-btn" onclick="removeStock('${d.code}','${type}')" title="제거">✕</button>
+      </div></td>
       <td>
         <div style="font-weight:500">${d.name}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">
@@ -371,6 +390,8 @@ function renderSection(type, codes, label) {
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           ${signalBadge(d.signal)} ${alignBadge(d)}
+          <button class="act-btn" onclick="moveStock('${d.code}','${type}',-1)">▲</button>
+          <button class="act-btn" onclick="moveStock('${d.code}','${type}',1)">▼</button>
           <button class="rm-btn" onclick="removeStock('${d.code}','${type}')">✕</button>
         </div>
       </div>
