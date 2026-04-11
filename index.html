@@ -208,7 +208,7 @@ th[data-tip]:hover::after { opacity: 1; }
 <script>
 let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'chg', sortDir = -1, activeSector = 'all';
 
-fetch('screener_result.json')
+fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
   .then(d => {
     data = d;
