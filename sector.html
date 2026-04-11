@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>섹터 대시보드 — 🐯 야수의 심장</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
+
+/* GNB */
+.gnb { background: #fff; border-bottom: 1px solid #ebebeb; position: sticky; top: 0; z-index: 200; }
+.gnb-inner { max-width: 1400px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; height: 52px; }
+.gnb-logo { font-size: 16px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.5px; margin-right: 28px; text-decoration: none; }
+.gnb-logo span { color: #534AB7; }
+.gnb-nav { display: flex; align-items: center; height: 100%; gap: 2px; }
+.gnb-tab { font-size: 14px; color: #888; text-decoration: none; padding: 0 14px; height: 100%; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: color 0.15s; white-space: nowrap; }
+.gnb-tab:hover { color: #333; }
+.gnb-tab.active { color: #1a1a1a; font-weight: 600; border-bottom-color: #1a1a1a; }
+
+/* Layout */
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.page-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.page-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+/* Sub tabs */
+.sub-tabs { display: flex; gap: 0; background: #fff; border: 0.5px solid #e5e5e5; border-radius: 10px; overflow: hidden; margin-bottom: 20px; width: fit-content; }
+.sub-tab { font-size: 13px; padding: 8px 18px; cursor: pointer; color: #888; background: #fff; border: none; transition: all 0.15s; }
+.sub-tab.active { background: #1a1a1a; color: #fff; font-weight: 500; }
+.sub-tab:hover:not(.active) { background: #f5f5f3; color: #333; }
+
+/* Two-column layout */
+.two-col { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
+
+/* Left: ranking list */
+.rank-panel { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow: hidden; }
+.rank-panel-header { padding: 14px 16px; border-bottom: 0.5px solid #f0f0f0; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+.rank-panel-header .updated { font-size: 11px; color: #aaa; font-weight: 400; }
+.rank-item { padding: 12px 16px; border-bottom: 0.5px solid #f5f5f3; cursor: pointer; transition: background 0.1s; }
+.rank-item:last-child { border-bottom: none; }
+.rank-item:hover { background: #fafafa; }
+.rank-item.active { background: #EEEDFE; }
+.rank-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.rank-num { font-size: 13px; font-weight: 700; color: #aaa; width: 18px; flex-shrink: 0; }
+.rank-name { font-size: 14px; font-weight: 600; flex: 1; }
+.rank-chg { font-size: 14px; font-weight: 600; }
+.rank-chg.up { color: #E24B4A; }
+.rank-chg.dn { color: #3498DB; }
+.rank-stocks { display: flex; gap: 6px; flex-wrap: wrap; padding-left: 28px; }
+.rank-stock-chip { font-size: 11px; color: #666; background: #f5f5f3; border-radius: 4px; padding: 2px 7px; }
+.rank-stock-chip.leader { background: #EAF3DE; color: #3B6D11; }
+
+/* Right: sector cards */
+.cards-panel {}
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.sector-card { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 16px; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; }
+.sector-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: #d0d0d0; }
+.sector-card.active { border-color: #AFA9EC; box-shadow: 0 0 0 2px #EEEDFE; }
+.sector-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.sector-card-name { font-size: 15px; font-weight: 700; }
+.sector-card-arrow { font-size: 12px; color: #ccc; }
+.sector-card-vol { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+.sector-card-stocks { font-size: 12px; color: #666; margin-bottom: 10px; line-height: 1.5; }
+.sector-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.sector-card-chg { font-size: 20px; font-weight: 700; }
+.sector-card-chg.up { color: #E24B4A; }
+.sector-card-chg.dn { color: #3498DB; }
+.sector-card-chg.flat { color: #888; }
+.sector-card-meta { font-size: 11px; color: #aaa; text-align: right; }
+.leader-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #EAF3DE; color: #3B6D11; font-weight: 500; }
+
+/* Group action panel */
+.group-action { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; margin-bottom: 16px; overflow: hidden; }
+.ga-header { padding: 14px 16px; border-bottom: 0.5px solid #f0f0f0; font-size: 13px; font-weight: 600; }
+.ga-desc { font-size: 12px; color: #888; font-weight: 400; margin-top: 2px; }
+.ga-row { padding: 10px 16px; border-bottom: 0.5px solid #f5f5f3; display: flex; align-items: center; gap: 12px; }
+.ga-row:last-child { border-bottom: none; }
+.ga-date { font-size: 12px; color: #aaa; width: 60px; flex-shrink: 0; }
+.ga-sector { font-size: 13px; font-weight: 600; flex: 1; }
+.ga-bar-wrap { flex: 2; display: flex; align-items: center; gap: 8px; }
+.ga-bar-bg { flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.ga-bar-fill { height: 100%; border-radius: 3px; background: #E24B4A; }
+.ga-stat { font-size: 12px; color: #555; white-space: nowrap; }
+.ga-chg { font-size: 13px; font-weight: 600; color: #E24B4A; width: 55px; text-align: right; flex-shrink: 0; }
+
+/* State badges */
+.state-leading { background: #EAF3DE; color: #3B6D11; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+.state-watch    { background: #FAEEDA; color: #854F0B; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+.state-exit     { background: #FCEBEB; color: #A32D2D; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+
+/* Detail drawer */
+.detail-drawer { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 16px; margin-top: 16px; display: none; }
+.detail-drawer.open { display: block; }
+.detail-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.detail-table th { text-align: left; font-size: 11px; color: #888; font-weight: 500; padding: 6px 10px; border-bottom: 0.5px solid #eee; background: #fafafa; }
+.detail-table td { padding: 8px 10px; border-bottom: 0.5px solid #f5f5f3; vertical-align: middle; }
+.detail-table tr:last-child td { border-bottom: none; }
+.detail-table tr:hover td { background: #fafaf8; }
+
+/* Loading / empty */
+.loading { padding: 60px; text-align: center; color: #aaa; font-size: 14px; }
+.building { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 48px 24px; text-align: center; }
+.building-icon { font-size: 36px; margin-bottom: 12px; }
+.building-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.building-desc { font-size: 13px; color: #888; line-height: 1.7; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  .wrap { padding: 16px 12px; }
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .gnb-logo { margin-right: 16px; }
+}
+</style>
+</head>
+<body>
+<nav class="gnb">
+  <div class="gnb-inner">
+    <a class="gnb-logo" href="index.html">🐯 야수의 <span>심장</span></a>
+    <div class="gnb-nav">
+      <a class="gnb-tab" href="index.html">종목 스크리너</a>
+      <a class="gnb-tab active" href="sector.html">섹터 대시보드</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="page-title">섹터 대시보드</div>
+  <div class="page-sub">주도 업종 · 그룹 액션 · 섹터별 주도주 현황</div>
+
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="setTab('weekly',this)">주간 업종 현황</button>
+    <button class="sub-tab" onclick="setTab('action',this)">그룹 액션</button>
+    <button class="sub-tab" onclick="setTab('leaders',this)">주도주 목록</button>
+  </div>
+
+  <div id="content"></div>
+</div>
+
+<script>
+let data = [];
+let activeTab = 'weekly';
+let activeSector = null;
+
+// Load screener_result.json and build sector aggregation
+fetch('screener_result.json')
+  .then(r => r.json())
+  .then(json => {
+    data = json.stocks || json;
+    buildSectors();
+    renderTab();
+  })
+  .catch(() => {
+    document.getElementById('content').innerHTML = `
+      <div class="building">
+        <div class="building-icon">📡</div>
+        <div class="building-title">데이터를 불러올 수 없습니다</div>
+        <div class="building-desc">screener_result.json 파일이 필요합니다.<br>스크리너를 먼저 실행해주세요.</div>
+      </div>`;
+  });
+
+// Sector aggregation from screener_result.json
+let sectors = {};
+
+function buildSectors() {
+  sectors = {};
+  data.forEach(s => {
+    const sec = s.sector || '기타';
+    if (!sectors[sec]) sectors[sec] = { name: sec, stocks: [], totalChg: 0, leaderCount: 0, watchCount: 0, exitCount: 0 };
+    sectors[sec].stocks.push(s);
+    sectors[sec].totalChg += (s.chg || 0);
+
+    // State classification
+    const abv30 = s.above_ma30_weeks || 0;
+    const abv10 = s.above_ma10_weeks || 0;
+    if (abv30 >= 1 && abv10 >= 1) sectors[sec].leaderCount++;
+    else if (abv30 >= 1) sectors[sec].watchCount++;
+    else sectors[sec].exitCount++;
+  });
+
+  // Sort sectors by avg weekly chg desc
+  Object.values(sectors).forEach(sec => {
+    sec.avgChg = sec.totalChg / sec.stocks.length;
+  });
+}
+
+function setTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeSector = null;
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('content');
+  if (activeTab === 'weekly') renderWeekly(el);
+  else if (activeTab === 'action') renderAction(el);
+  else renderLeaders(el);
+}
+
+function fmtChg(v) {
+  if (v == null) return '—';
+  const sign = v >= 0 ? '+' : '';
+  return sign + v.toFixed(2) + '%';
+}
+
+function chgClass(v) {
+  if (v > 0.3) return 'up';
+  if (v < -0.3) return 'dn';
+  return 'flat';
+}
+
+// ── Tab 1: 주간 업종 현황 ──────────────────────────────
+function renderWeekly(el) {
+  const sorted = Object.values(sectors).sort((a, b) => b.avgChg - a.avgChg);
+
+  // Left: ranking
+  let rankHtml = `<div class="rank-panel">
+    <div class="rank-panel-header">
+      <span>업종 주간 등락 랭킹</span>
+      <span class="updated" id="updated-txt"></span>
+    </div>`;
+
+  sorted.forEach((sec, i) => {
+    const topLeaders = sec.stocks
+      .filter(s => (s.above_ma30_weeks||0) >= 1 && (s.above_ma10_weeks||0) >= 1)
+      .sort((a, b) => (b.chg||0) - (a.chg||0))
+      .slice(0, 3);
+    const topWatch = sec.stocks
+      .filter(s => (s.above_ma30_weeks||0) >= 1 && (s.above_ma10_weeks||0) < 1)
+      .sort((a, b) => (b.chg||0) - (a.chg||0))
+      .slice(0, 2);
+
+    const isActive = activeSector === sec.name;
+    rankHtml += `<div class="rank-item${isActive?' active':''}" onclick="selectSector('${sec.name}')">
+      <div class="rank-row">
+        <span class="rank-num">${i+1}</span>
+        <span class="rank-name">${sec.name}</span>
+        <span class="rank-chg ${chgClass(sec.avgChg)}">${fmtChg(sec.avgChg)}</span>
+      </div>
+      <div class="rank-stocks">
+        ${topLeaders.map(s=>`<span class="rank-stock-chip leader">${s.name}</span>`).join('')}
+        ${topWatch.map(s=>`<span class="rank-stock-chip">${s.name}</span>`).join('')}
+      </div>
+    </div>`;
+  });
+  rankHtml += `</div>`;
+
+  // Right: cards
+  let cardsHtml = `<div class="cards-grid">`;
+  sorted.forEach(sec => {
+    const topNames = sec.stocks
+      .sort((a,b) => (b.chg||0)-(a.chg||0))
+      .slice(0, 3)
+      .map(s => s.name)
+      .join(', ');
+    const isActive = activeSector === sec.name;
+    cardsHtml += `
+    <div class="sector-card${isActive?' active':''}" onclick="selectSector('${sec.name}')">
+      <div class="sector-card-header">
+        <span class="sector-card-name">${sec.name}</span>
+        <span class="sector-card-arrow">▶</span>
+      </div>
+      <div class="sector-card-vol">종목 ${sec.stocks.length}개</div>
+      <div class="sector-card-stocks">${topNames} 외</div>
+      <div class="sector-card-footer">
+        <span class="sector-card-chg ${chgClass(sec.avgChg)}">${fmtChg(sec.avgChg)}</span>
+        <div class="sector-card-meta">
+          <div><span class="leader-badge">주도중</span> ${sec.leaderCount}개</div>
+          <div style="margin-top:3px;color:#aaa">조정중 ${sec.watchCount} · 이탈 ${sec.exitCount}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  cardsHtml += `</div>`;
+
+  // Detail drawer
+  let drawerHtml = `<div class="detail-drawer${activeSector?' open':''}" id="drawer">`;
+  if (activeSector && sectors[activeSector]) {
+    const sec = sectors[activeSector];
+    const sorted2 = [...sec.stocks].sort((a,b) => (b.chg||0)-(a.chg||0));
+    drawerHtml += `
+      <div class="detail-title">${sec.name} — 종목 상세</div>
+      <table class="detail-table">
+        <thead><tr>
+          <th>종목</th><th>현재가</th><th>주간등락</th>
+          <th>30주선괴리율</th><th>상태</th><th>10주선돌파</th><th>30주선돌파</th>
+        </tr></thead>
+        <tbody>
+        ${sorted2.map(s => {
+          const abv30 = s.above_ma30_weeks||0, abv10 = s.above_ma10_weeks||0;
+          let stateBadge;
+          if (abv30 >= 1 && abv10 >= 1) stateBadge = `<span class="state-leading">주도중</span>`;
+          else if (abv30 >= 1)           stateBadge = `<span class="state-watch">조정중</span>`;
+          else                           stateBadge = `<span class="state-exit">이탈</span>`;
+          const chgFmt = fmtChg(s.chg);
+          const chgCls = (s.chg||0)>=0?'green':'red';
+          return `<tr>
+            <td><strong>${s.name}</strong><br><span style="font-size:11px;color:#aaa">${s.code}</span></td>
+            <td>${(s.price||0).toLocaleString()}</td>
+            <td class="${chgCls}">${chgFmt}</td>
+            <td>${s.ma30gap!=null ? (s.ma30gap>=0?'+':'')+s.ma30gap.toFixed(1)+'%' : '—'}</td>
+            <td>${stateBadge}</td>
+            <td>${abv10>=1 ? (abv10===1?'<span class="state-leading">최초돌파</span>':`${abv10}주째`) : '—'}</td>
+            <td>${abv30>=1 ? (abv30===1?'<span class="state-leading">최초돌파</span>':`${abv30}주째`) : '—'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>`;
+  }
+  drawerHtml += `</div>`;
+
+  el.innerHTML = `
+    <div class="two-col">
+      <div>${rankHtml}</div>
+      <div>${cardsHtml}</div>
+    </div>
+    ${drawerHtml}`;
+
+  // Update timestamp
+  fetch('screener_result.json').then(r=>r.json()).then(j => {
+    const u = j.updated || j.stocks?.[0]?.date || '';
+    const t = document.getElementById('updated-txt');
+    if (t) t.textContent = u ? `갱신 ${u}` : '';
+  }).catch(()=>{});
+}
+
+// ── Tab 2: 그룹 액션 ──────────────────────────────────
+function renderAction(el) {
+  // Group action: find days where a sector had many stocks moving together
+  // We use weekly chg as proxy (daily data not in JSON yet)
+  // Show a placeholder + explanation when sector_result.json isn't available
+  fetch('sector_result.json')
+    .then(r => r.json())
+    .then(json => renderActionData(el, json))
+    .catch(() => renderActionPlaceholder(el));
+}
+
+function renderActionPlaceholder(el) {
+  // Build mock group action from weekly data as best-effort
+  const sorted = Object.values(sectors).sort((a,b) => b.avgChg - a.avgChg);
+
+  let html = `
+    <div class="group-action">
+      <div class="ga-header">
+        그룹 액션 감지
+        <div class="ga-desc">이번 주 같은 섹터 종목들이 함께 상승한 그룹 현황 (주간 기준)</div>
+      </div>`;
+
+  sorted.slice(0, 12).forEach(sec => {
+    const risingCount = sec.stocks.filter(s => (s.chg||0) > 1).length;
+    const total = sec.stocks.length;
+    const ratio = total > 0 ? risingCount / total : 0;
+    if (risingCount < 2) return;
+    html += `
+      <div class="ga-row">
+        <span class="ga-date">이번 주</span>
+        <span class="ga-sector">${sec.name}</span>
+        <div class="ga-bar-wrap">
+          <div class="ga-bar-bg"><div class="ga-bar-fill" style="width:${Math.round(ratio*100)}%"></div></div>
+          <span class="ga-stat">${risingCount}/${total}종목 상승</span>
+        </div>
+        <span class="ga-chg">${fmtChg(sec.avgChg)}</span>
+      </div>`;
+  });
+
+  html += `</div>
+    <div class="building" style="margin-top:16px">
+      <div class="building-icon">🗓️</div>
+      <div class="building-title">일봉 그룹 액션 감지</div>
+      <div class="building-desc">
+        특정 요일에 같은 섹터 종목들이 동시에 강하게 상승하는 패턴을 감지합니다.<br>
+        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px">sector_scan.py</code> 실행 후 일봉 데이터가 추가되면 활성화됩니다.
+      </div>
+    </div>`;
+
+  el.innerHTML = html;
+}
+
+function renderActionData(el, json) {
+  // Will be implemented when sector_result.json is available
+  renderActionPlaceholder(el);
+}
+
+// ── Tab 3: 주도주 목록 ────────────────────────────────
+function renderLeaders(el) {
+  const leaders = data
+    .filter(s => (s.above_ma30_weeks||0) >= 1 && (s.above_ma10_weeks||0) >= 1)
+    .sort((a,b) => (b.above_ma30_weeks||0) - (a.above_ma30_weeks||0));
+
+  const watching = data
+    .filter(s => (s.above_ma30_weeks||0) >= 1 && (s.above_ma10_weeks||0) < 1)
+    .sort((a,b) => (b.chg||0) - (a.chg||0));
+
+  // Group by sector
+  function groupBySector(arr) {
+    const g = {};
+    arr.forEach(s => {
+      const sec = s.sector || '기타';
+      if (!g[sec]) g[sec] = [];
+      g[sec].push(s);
+    });
+    return g;
+  }
+
+  function tableRows(arr) {
+    return arr.map(s => {
+      const abv30 = s.above_ma30_weeks||0, abv10 = s.above_ma10_weeks||0;
+      const chgCls = (s.chg||0)>=0?'green':'red';
+      return `<tr>
+        <td><strong>${s.name}</strong><br><span style="font-size:11px;color:#aaa">${s.code}</span></td>
+        <td class="${chgCls}">${fmtChg(s.chg)}</td>
+        <td>${s.ma30gap!=null?(s.ma30gap>=0?'+':'')+s.ma30gap.toFixed(1)+'%':'—'}</td>
+        <td>${abv10>=1?(abv10===1?'<span class="state-leading">최초돌파</span>':`${abv10}주째`):'—'}</td>
+        <td>${abv30>=1?(abv30===1?'<span class="state-leading">최초돌파</span>':`${abv30}주째`):'—'}</td>
+        <td><span style="font-size:11px;color:#aaa">${s.market||''}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const leaderBySector = groupBySector(leaders);
+
+  let html = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+      <span style="font-size:13px;color:#888">주도중 <strong style="color:#3B6D11">${leaders.length}</strong>종목</span>
+      <span style="color:#e0e0e0">|</span>
+      <span style="font-size:13px;color:#888">조정중 <strong style="color:#854F0B">${watching.length}</strong>종목</span>
+    </div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🟢 주도중 — 30주선 + 10주선 위</div>
+    <div class="table-panel" style="background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden;margin-bottom:20px">`;
+
+  Object.entries(leaderBySector).forEach(([sec, stocks]) => {
+    html += `<div style="padding:8px 14px;background:#f7f6f3;font-size:12px;font-weight:600;color:#555;border-bottom:0.5px solid #eee">${sec} (${stocks.length})</div>
+      <table class="detail-table"><thead><tr>
+        <th>종목</th><th>주간등락</th><th>30주선괴리율</th><th>10주선돌파</th><th>30주선돌파</th><th>시장</th>
+      </tr></thead><tbody>${tableRows(stocks)}</tbody></table>`;
+  });
+
+  html += `</div>`;
+
+  if (watching.length > 0) {
+    const watchBySector = groupBySector(watching);
+    html += `<div style="font-size:13px;font-weight:600;margin-bottom:10px">🟡 조정중 — 30주선 위, 10주선 아래</div>
+      <div class="table-panel" style="background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden">`;
+    Object.entries(watchBySector).forEach(([sec, stocks]) => {
+      html += `<div style="padding:8px 14px;background:#f7f6f3;font-size:12px;font-weight:600;color:#555;border-bottom:0.5px solid #eee">${sec} (${stocks.length})</div>
+        <table class="detail-table"><thead><tr>
+          <th>종목</th><th>주간등락</th><th>30주선괴리율</th><th>10주선돌파</th><th>30주선돌파</th><th>시장</th>
+        </tr></thead><tbody>${tableRows(stocks)}</tbody></table>`;
+    });
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function selectSector(name) {
+  activeSector = activeSector === name ? null : name;
+  renderTab();
+  // Scroll to drawer on mobile
+  if (activeSector) {
+    setTimeout(() => {
+      const d = document.getElementById('drawer');
+      if (d) d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+}
+</script>
+</body>
+</html>
