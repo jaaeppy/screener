@@ -145,6 +145,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="sub-tab active" onclick="setTab('weekly',this)">주간 업종 현황</button>
     <button class="sub-tab" onclick="setTab('action',this)">그룹 액션</button>
     <button class="sub-tab" onclick="setTab('leaders',this)">주도주 목록</button>
+    <button class="sub-tab" onclick="setTab('firstBreak',this)">최초돌파</button>
   </div>
 
   <div id="content"></div>
@@ -209,7 +210,8 @@ function renderTab() {
   const el = document.getElementById('content');
   if (activeTab === 'weekly') renderWeekly(el);
   else if (activeTab === 'action') renderAction(el);
-  else renderLeaders(el);
+  else if (activeTab === 'leaders') renderLeaders(el);
+  else if (activeTab === 'firstBreak') renderFirstBreak(el);
 }
 
 function fmtChg(v) {
@@ -510,6 +512,100 @@ function renderLeaders(el) {
   }
 
   el.innerHTML = html;
+}
+
+// ── Tab 4: 최초돌파 ──────────────────────────────────
+function renderFirstBreak(el) {
+  const firstStocks = data
+    .filter(s => (s.above_ma30_weeks||0) === 1)
+    .sort((a,b) => (b.chg||0) - (a.chg||0));
+
+  // Group by sector
+  const bySector = {};
+  firstStocks.forEach(s => {
+    const sec = s.sector || '기타';
+    if (!bySector[sec]) bySector[sec] = [];
+    bySector[sec].push(s);
+  });
+
+  const sortedSectors = Object.entries(bySector).sort((a,b) => b[1].length - a[1].length);
+
+  let html = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:15px;font-weight:600">🚀 30주선 최초돌파</span>
+      <span style="font-size:13px;color:#888">이번 주 처음으로 30주선 위로 올라온 종목</span>
+      <span style="font-size:13px;font-weight:600;color:#8B1A7E">${firstStocks.length}종목</span>
+      <span style="font-size:12px;color:#aaa">(${sortedSectors.length}개 업종)</span>
+    </div>`;
+
+  if (firstStocks.length === 0) {
+    html += `<div class="building">
+      <div class="building-icon">📭</div>
+      <div class="building-title">이번 주 최초돌파 종목이 없습니다</div>
+      <div class="building-desc">30주선을 처음 돌파한 종목이 나타나면 여기에 표시됩니다.</div>
+    </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  // Sector cards overview
+  html += `<div class="cards-grid" style="margin-bottom:20px">`;
+  sortedSectors.forEach(([sec, stocks]) => {
+    const avgChg = stocks.reduce((s,x) => s+(x.chg||0), 0) / stocks.length;
+    const names = stocks.slice(0,3).map(s=>s.name).join(', ');
+    html += `
+    <div class="sector-card" onclick="scrollToFirstSector('fb-${sec.replace(/[^a-zA-Z0-9가-힣]/g,'')}')">
+      <div class="sector-card-header">
+        <span class="sector-card-name">${sec}</span>
+        <span style="font-size:12px;color:#8B1A7E;font-weight:600">${stocks.length}종목</span>
+      </div>
+      <div class="sector-card-stocks" style="margin-top:6px">${names}${stocks.length>3?' 외':''}</div>
+      <div style="margin-top:8px">
+        <span class="sector-card-chg ${chgClass(avgChg)}">${fmtChg(avgChg)}</span>
+        <span style="font-size:11px;color:#aaa;margin-left:6px">평균 주간등락</span>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Detail tables per sector
+  sortedSectors.forEach(([sec, stocks]) => {
+    const secId = 'fb-' + sec.replace(/[^a-zA-Z0-9가-힣]/g,'');
+    html += `
+    <div id="${secId}" style="background:#fff;border-radius:12px;border:0.5px solid #e5e5e5;overflow:hidden;margin-bottom:12px">
+      <div style="padding:10px 16px;background:#f7f6f3;font-size:13px;font-weight:600;color:#555;border-bottom:0.5px solid #eee;display:flex;align-items:center;justify-content:space-between">
+        <span>${sec} <span style="color:#8B1A7E;font-weight:600">${stocks.length}종목</span></span>
+        <span style="font-size:11px;color:#aaa">평균 ${fmtChg(stocks.reduce((s,x)=>s+(x.chg||0),0)/stocks.length)}</span>
+      </div>
+      <table class="detail-table">
+        <thead><tr>
+          <th>종목</th><th>현재가</th><th>주간등락</th><th>30주선괴리율</th><th>10주선괴리율</th><th>거래량강도</th><th>시장</th>
+        </tr></thead>
+        <tbody>
+        ${stocks.map(s => {
+          const chgCls = (s.chg||0)>=0?'up':'dn';
+          const volCls = (s.vol||0)>=2?'up':(s.vol||0)>=1?'':'dn';
+          return `<tr>
+            <td><strong>${s.name}</strong><br><span style="font-size:11px;color:#aaa">${s.code}</span></td>
+            <td>${(s.price||0).toLocaleString()}</td>
+            <td class="${chgCls}" style="font-weight:600">${fmtChg(s.chg)}</td>
+            <td>${s.ma30gap!=null?(s.ma30gap>=0?'+':'')+s.ma30gap.toFixed(1)+'%':'—'}</td>
+            <td>${s.ma10gap!=null?(s.ma10gap>=0?'+':'')+s.ma10gap.toFixed(1)+'%':'—'}</td>
+            <td>${(s.vol||0).toFixed(1)}x</td>
+            <td><span style="font-size:11px;color:#aaa">${s.market||''}</span></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function scrollToFirstSector(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleRankMore() {
