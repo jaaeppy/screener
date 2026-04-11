@@ -137,8 +137,12 @@ for i, row in stocks.iterrows():
 signal_order = {'strong': 0, 'watch': 1, 'weak': 2}
 results.sort(key=lambda x: (signal_order[x['signal']], -x['ma30gap']))
 
+output = {
+    'updated': datetime.now().strftime('%Y-%m-%d %H:%M'),
+    'stocks': results
+}
 with open('screener_result.json', 'w', encoding='utf-8') as f:
-    json.dump(results, f, ensure_ascii=False)
+    json.dump(output, f, ensure_ascii=False)
 
 print(f"\n완료! 총 {len(results)}개 종목 스캔")
 print(f"강한돌파: {sum(1 for r in results if r['signal']=='strong')}개")

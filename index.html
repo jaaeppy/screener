@@ -148,7 +148,7 @@ th[data-tip]:hover::after { opacity: 1; }
 </nav>
 <div class="wrap">
   <div class="top-row">
-    <h1>30주선 스크리너</h1>
+    <h1>종목 스크리너</h1>
     <span class="updated" id="updated"></span>
   </div>
 
@@ -210,9 +210,10 @@ let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'chg', sort
 
 fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
-  .then(d => {
-    data = d;
-    document.getElementById('updated').textContent = '스캔 완료 · ' + data.length + '개 종목';
+  .then(raw => {
+    data = raw.stocks || raw;
+    const updatedAt = raw.updated || '';
+    document.getElementById('updated').textContent = (updatedAt ? updatedAt + ' 기준 · ' : '스캔 완료 · ') + data.length + '개 종목';
     buildSectorBtns();
     render();
   });
