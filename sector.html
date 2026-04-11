@@ -144,7 +144,7 @@ let activeTab = 'weekly';
 let activeSector = null;
 
 // Load screener_result.json and build sector aggregation
-fetch('screener_result.json')
+fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
   .then(json => {
     data = json.stocks || json;
@@ -320,7 +320,7 @@ function renderWeekly(el) {
     ${drawerHtml}`;
 
   // Update timestamp
-  fetch('screener_result.json').then(r=>r.json()).then(j => {
+  fetch('screener_result.json?v=' + Date.now()).then(r=>r.json()).then(j => {
     const u = j.updated || j.stocks?.[0]?.date || '';
     const t = document.getElementById('updated-txt');
     if (t) t.textContent = u ? `갱신 ${u}` : '';
