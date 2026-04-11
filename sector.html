@@ -230,10 +230,14 @@ function renderWeekly(el) {
 
   // Left: ranking (TOP 10 + 더보기)
   const TOP_N = 10;
+  const moreCount = sorted.length > TOP_N ? sorted.length - TOP_N : 0;
   let rankHtml = `<div class="rank-panel">
     <div class="rank-panel-header">
       <span>업종 주간 등락 랭킹</span>
-      <span class="updated" id="updated-txt"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${moreCount > 0 ? `<button id="rank-more-btn" onclick="toggleRankMore()" style="font-size:12px;color:#534AB7;background:none;border:none;cursor:pointer;padding:4px 8px">▼ 전체 보기 (${moreCount}개 더)</button>` : ''}
+        <span class="updated" id="updated-txt"></span>
+      </div>
     </div>
     <div class="rank-items">`;
 
@@ -263,16 +267,7 @@ function renderWeekly(el) {
     </div></div>`;
   });
 
-  rankHtml += `</div>`; // close rank-items
-
-  if (sorted.length > TOP_N) {
-    rankHtml += `<div id="rank-more-btn" style="padding:10px 16px;text-align:center;border-top:0.5px solid #f0f0f0">
-      <button onclick="toggleRankMore()" style="font-size:12px;color:#534AB7;background:none;border:none;cursor:pointer;padding:4px 8px">
-        ▼ 전체 보기 (${sorted.length - TOP_N}개 더)
-      </button>
-    </div>`;
-  }
-  rankHtml += `</div>`;
+  rankHtml += `</div></div>`; // close rank-items + rank-panel
 
   // Right: cards
   let cardsHtml = `<div class="cards-grid">`;
@@ -517,7 +512,7 @@ function renderLeaders(el) {
 
 function toggleRankMore() {
   const extras = document.querySelectorAll('.rank-item-extra');
-  const btn = document.getElementById('rank-more-btn').querySelector('button');
+  const btn = document.getElementById('rank-more-btn');
   const isHidden = extras[0] && extras[0].style.display === 'none';
   extras.forEach(el => el.style.display = isHidden ? 'block' : 'none');
   btn.textContent = isHidden ? '▲ 접기' : `▼ 전체 보기 (${extras.length}개 더)`;
