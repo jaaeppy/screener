@@ -40,7 +40,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .rank-item:last-child { border-bottom: none; }
 .rank-item:hover { background: #fafafa; }
 .rank-item.active { background: #EEEDFE; }
-.rank-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.rank-items { }
 .rank-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .rank-num { font-size: 13px; font-weight: 700; color: #aaa; width: 18px; flex-shrink: 0; }
 .rank-name { font-size: 14px; font-weight: 600; flex: 1; }
@@ -334,8 +334,10 @@ function renderWeekly(el) {
   drawerHtml += `</div>`;
 
   el.innerHTML = `
-    <div>${rankHtml}</div>
-    <div style="margin-top:16px">${cardsHtml}</div>
+    <div class="two-col">
+      <div>${rankHtml}</div>
+      <div>${cardsHtml}</div>
+    </div>
     ${drawerHtml}`;
 
   // Update timestamp
