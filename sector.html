@@ -82,6 +82,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .ga-bar-fill { height: 100%; border-radius: 3px; background: #E24B4A; }
 .ga-stat { font-size: 12px; color: #555; white-space: nowrap; }
 .ga-chg { font-size: 13px; font-weight: 600; color: #E24B4A; width: 55px; text-align: right; flex-shrink: 0; }
+.ga-chevron { font-size: 11px; color: #ccc; width: 16px; text-align: center; flex-shrink: 0; transition: transform 0.2s; }
+.ga-row.open .ga-chevron { transform: rotate(90deg); }
+.ga-row { cursor: pointer; }
+.ga-row:hover { background: #fafafa; }
+.ga-detail { display: none; border-top: 0.5px solid #f5f5f3; background: #fafaf8; }
+.ga-detail.open { display: block; }
+.ga-detail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ga-detail th { padding: 6px 16px; text-align: left; font-size: 11px; color: #aaa; font-weight: 500; background: #f5f5f3; border-bottom: 0.5px solid #eee; }
+.ga-detail td { padding: 7px 16px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; }
+.ga-detail tr:last-child td { border-bottom: none; }
+.ga-detail tr:hover td { background: #f5f5f3; }
 
 /* State badges */
 .state-leading { background: #EAF3DE; color: #3B6D11; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
@@ -349,13 +360,33 @@ function renderActionPlaceholder(el) {
         <div class="ga-desc">이번 주 같은 섹터 종목들이 함께 상승한 그룹 현황 (주간 기준)</div>
       </div>`;
 
-  sorted.slice(0, 12).forEach(sec => {
-    const risingCount = sec.stocks.filter(s => (s.chg||0) > 1).length;
+  sorted.slice(0, 20).forEach(sec => {
+    const risingStocks = sec.stocks.filter(s => (s.chg||0) > 1).sort((a,b) => (b.chg||0)-(a.chg||0));
+    const risingCount = risingStocks.length;
     const total = sec.stocks.length;
     const ratio = total > 0 ? risingCount / total : 0;
     if (risingCount < 2) return;
+
+    const secId = 'ga-' + sec.name.replace(/[^a-zA-Z0-9가-힣]/g, '');
+    const detailRows = risingStocks.map(s => {
+      const chgCls = (s.chg||0) >= 0 ? 'up' : 'dn';
+      const abv30 = s.above_ma30_weeks||0;
+      const abv10 = s.above_ma10_weeks||0;
+      let state = '';
+      if (abv30 >= 1 && abv10 >= 1) state = `<span class="state-leading">주도중</span>`;
+      else if (abv30 >= 1)           state = `<span class="state-watch">조정중</span>`;
+      else                           state = `<span class="state-exit">이탈</span>`;
+      return `<tr>
+        <td><strong>${s.name}</strong> <span style="color:#aaa;font-size:11px">${s.code}</span></td>
+        <td class="ga-chg" style="width:auto;text-align:left">${fmtChg(s.chg)}</td>
+        <td>${s.ma30gap!=null?(s.ma30gap>=0?'+':'')+s.ma30gap.toFixed(1)+'%':'—'}</td>
+        <td>${state}</td>
+        <td style="font-size:11px;color:#aaa">${s.market||''}</td>
+      </tr>`;
+    }).join('');
+
     html += `
-      <div class="ga-row">
+      <div class="ga-row" id="${secId}-row" onclick="toggleGaDetail('${secId}')">
         <span class="ga-date">이번 주</span>
         <span class="ga-sector">${sec.name}</span>
         <div class="ga-bar-wrap">
@@ -363,20 +394,34 @@ function renderActionPlaceholder(el) {
           <span class="ga-stat">${risingCount}/${total}종목 상승</span>
         </div>
         <span class="ga-chg">${fmtChg(sec.avgChg)}</span>
+        <span class="ga-chevron">▶</span>
+      </div>
+      <div class="ga-detail" id="${secId}-detail">
+        <table>
+          <thead><tr>
+            <th>종목</th><th>주간등락</th><th>30주선괴리율</th><th>상태</th><th>시장</th>
+          </tr></thead>
+          <tbody>${detailRows}</tbody>
+        </table>
       </div>`;
   });
 
-  html += `</div>
-    <div class="building" style="margin-top:16px">
-      <div class="building-icon">🗓️</div>
-      <div class="building-title">일봉 그룹 액션 감지</div>
-      <div class="building-desc">
-        특정 요일에 같은 섹터 종목들이 동시에 강하게 상승하는 패턴을 감지합니다.<br>
-        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px">sector_scan.py</code> 실행 후 일봉 데이터가 추가되면 활성화됩니다.
-      </div>
-    </div>`;
-
+  html += `</div>`;
   el.innerHTML = html;
+}
+
+function toggleGaDetail(secId) {
+  const row    = document.getElementById(secId + '-row');
+  const detail = document.getElementById(secId + '-detail');
+  if (!row || !detail) return;
+  const isOpen = detail.classList.contains('open');
+  // close all others
+  document.querySelectorAll('.ga-detail.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.ga-row.open').forEach(r => r.classList.remove('open'));
+  if (!isOpen) {
+    detail.classList.add('open');
+    row.classList.add('open');
+  }
 }
 
 function renderActionData(el, json) {
