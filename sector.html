@@ -227,7 +227,8 @@ function chgClass(v) {
 function renderWeekly(el) {
   const sorted = Object.values(sectors).sort((a, b) => b.avgChg - a.avgChg);
 
-  // Left: ranking
+  // Left: ranking (TOP 10 + 더보기)
+  const TOP_N = 10;
   let rankHtml = `<div class="rank-panel">
     <div class="rank-panel-header">
       <span>업종 주간 등락 랭킹</span>
@@ -245,7 +246,9 @@ function renderWeekly(el) {
       .slice(0, 2);
 
     const isActive = activeSector === sec.name;
-    rankHtml += `<div class="rank-item${isActive?' active':''}" onclick="selectSector('${sec.name}')">
+    const hidden = i >= TOP_N ? ' class="rank-item-extra" style="display:none"' : '';
+    rankHtml += `<div${hidden}>
+    <div class="rank-item${isActive?' active':''}" onclick="selectSector('${sec.name}')">
       <div class="rank-row">
         <span class="rank-num">${i+1}</span>
         <span class="rank-name">${sec.name}</span>
@@ -255,8 +258,16 @@ function renderWeekly(el) {
         ${topLeaders.map(s=>`<span class="rank-stock-chip leader">${s.name}</span>`).join('')}
         ${topWatch.map(s=>`<span class="rank-stock-chip">${s.name}</span>`).join('')}
       </div>
-    </div>`;
+    </div></div>`;
   });
+
+  if (sorted.length > TOP_N) {
+    rankHtml += `<div id="rank-more-btn" style="padding:10px 16px;text-align:center;border-top:0.5px solid #f0f0f0">
+      <button onclick="toggleRankMore()" style="font-size:12px;color:#534AB7;background:none;border:none;cursor:pointer;padding:4px 8px">
+        ▼ 전체 보기 (${sorted.length - TOP_N}개 더)
+      </button>
+    </div>`;
+  }
   rankHtml += `</div>`;
 
   // Right: cards
@@ -500,6 +511,14 @@ function renderLeaders(el) {
   }
 
   el.innerHTML = html;
+}
+
+function toggleRankMore() {
+  const extras = document.querySelectorAll('.rank-item-extra');
+  const btn = document.getElementById('rank-more-btn').querySelector('button');
+  const isHidden = extras[0] && extras[0].style.display === 'none';
+  extras.forEach(el => el.style.display = isHidden ? 'block' : 'none');
+  btn.textContent = isHidden ? '▲ 접기' : `▼ 전체 보기 (${extras.length}개 더)`;
 }
 
 function selectSector(name) {
