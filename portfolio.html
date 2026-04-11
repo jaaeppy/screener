@@ -67,11 +67,22 @@ tr:hover td { background: #fafaf8; }
 .sector-tag { background: #F1EFE8; color: #5F5E5A; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
 
 /* Action btns */
-.act-btns { display: flex; align-items: center; gap: 2px; }
-.act-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 12px; padding: 2px 5px; border-radius: 4px; line-height: 1; }
-.act-btn:hover { color: #534AB7; background: #EEEDFE; }
 .rm-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
 .rm-btn:hover { color: #E24B4A; background: #FCEBEB; }
+
+/* Drag & drop */
+tr[draggable="true"] { cursor: grab; }
+tr[draggable="true"]:active { cursor: grabbing; }
+tr.dragging { opacity: 0.4; background: #EEEDFE; }
+tr.drag-over td { border-top: 2px solid #534AB7 !important; }
+.drag-handle { color: #ccc; cursor: grab; font-size: 14px; padding: 0 4px; user-select: none; }
+.drag-handle:hover { color: #888; }
+
+/* Mobile drag */
+.card[draggable="true"] { cursor: grab; }
+.card[draggable="true"]:active { cursor: grabbing; }
+.card.dragging { opacity: 0.4; }
+.card.drag-over { border-top: 2px solid #534AB7 !important; }
 
 /* Bar */
 .bar-wrap { display: flex; align-items: center; gap: 6px; }
@@ -342,12 +353,8 @@ function renderSection(type, codes, label) {
     const vw = Math.min(100, Math.round((d.vol / 5) * 100));
     const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#F5A623' : '#E24B4A';
     const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 52);
-    tableHtml += `<tr>
-      <td><div class="act-btns">
-        <button class="act-btn" onclick="moveStock('${d.code}','${type}',-1)" title="위로">▲</button>
-        <button class="act-btn" onclick="moveStock('${d.code}','${type}',1)" title="아래로">▼</button>
-        <button class="rm-btn" onclick="removeStock('${d.code}','${type}')" title="제거">✕</button>
-      </div></td>
+    tableHtml += `<tr draggable="true" data-code="${d.code}" data-type="${type}">
+      <td><span class="drag-handle">☰</span> <button class="rm-btn" onclick="removeStock('${d.code}','${type}')" title="제거">✕</button></td>
       <td>
         <div style="font-weight:500">${d.name}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">
@@ -382,16 +389,17 @@ function renderSection(type, codes, label) {
   stocks.forEach(d => {
     const chgCls = (d.chg||0) >= 0 ? 'green' : 'red';
     const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 110);
-    cardHtml += `<div class="card">
+    cardHtml += `<div class="card" draggable="true" data-code="${d.code}" data-type="${type}">
       <div class="card-header">
-        <div>
-          <div class="card-name">${d.name}</div>
-          <div class="card-code">${d.code}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="drag-handle">☰</span>
+          <div>
+            <div class="card-name">${d.name}</div>
+            <div class="card-code">${d.code}</div>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           ${signalBadge(d.signal)} ${alignBadge(d)}
-          <button class="act-btn" onclick="moveStock('${d.code}','${type}',-1)">▲</button>
-          <button class="act-btn" onclick="moveStock('${d.code}','${type}',1)">▼</button>
           <button class="rm-btn" onclick="removeStock('${d.code}','${type}')">✕</button>
         </div>
       </div>
@@ -416,6 +424,55 @@ function renderSection(type, codes, label) {
   cardHtml += `</div>`;
 
   contentEl.innerHTML = tableHtml + cardHtml;
+  // Init drag on newly rendered elements
+  contentEl.querySelectorAll('.table-wrap tbody').forEach(initDrag);
+  contentEl.querySelectorAll('.card-list').forEach(initDrag);
+}
+
+// ── Drag & Drop ─────────────────────────────────
+let dragCode = null;
+let dragType = null;
+
+function initDrag(container) {
+  const items = container.querySelectorAll('[draggable="true"]');
+  items.forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragCode = el.dataset.code;
+      dragType = el.dataset.type;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      container.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+      dragCode = null;
+      dragType = null;
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (el.dataset.type !== dragType || el.dataset.code === dragCode) return;
+      e.dataTransfer.dropEffect = 'move';
+      container.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      if (!dragCode || el.dataset.type !== dragType || el.dataset.code === dragCode) return;
+      const key = dragType === 'watch' ? WATCH_KEY : HOLD_KEY;
+      const list = getList(key);
+      const fromIdx = list.indexOf(dragCode);
+      const toIdx = list.indexOf(el.dataset.code);
+      if (fromIdx < 0 || toIdx < 0) return;
+      list.splice(fromIdx, 1);
+      list.splice(toIdx, 0, dragCode);
+      saveList(key, list);
+      render();
+    });
+  });
 }
 
 // Load data
