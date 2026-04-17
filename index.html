@@ -271,12 +271,20 @@ function breakBadge(weeks) {
   return '<span style="color:#ccc">—</span>';
 }
 
-// ── SVG 캔들차트 ────────────────────────────────
-function chartSvg(candles, ma10, ma20, ma30, w, h) {
+// ── SVG 캔들차트 (거래량 포함) ──────────────────────
+function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
   if (!candles || !candles.length) return '';
 
+  const hasVol = vols && vols.length === candles.length;
+  const CANDLE_RATIO = hasVol ? 0.63 : 1.0;
+  const GAP  = hasVol ? 3 : 0;
+  const pad  = { t: 4, b: 2, l: 2, r: 2 };
+  const iw   = w - pad.l - pad.r;
+  const candleH = Math.round((h - pad.t - pad.b) * CANDLE_RATIO);
+  const volH    = hasVol ? (h - pad.t - pad.b - candleH - GAP) : 0;
+
   const allVals = [
-    ...candles.flatMap(c => [c[1], c[2]]),       // high, low
+    ...candles.flatMap(c => [c[1], c[2]]),
     ...ma10.filter(v => v > 0),
     ...ma20.filter(v => v > 0),
     ...ma30.filter(v => v > 0)
@@ -286,21 +294,40 @@ function chartSvg(candles, ma10, ma20, ma30, w, h) {
   const lo = Math.min(...allVals);
   const hi = Math.max(...allVals);
   const range = hi - lo || 1;
-  const pad = { t: 4, b: 4, l: 2, r: 2 };
-  const iw = w - pad.l - pad.r;
-  const ih = h - pad.t - pad.b;
-  const n  = candles.length;
+  const n = candles.length;
   const slotW = iw / n;
-  const cw    = Math.max(1, slotW * 0.55);
+  const cw = Math.max(1, slotW * 0.55);
 
-  const py = v => pad.t + ih - ((v - lo) / range * ih);
+  const py = v => pad.t + candleH - ((v - lo) / range * candleH);
   const px = i => pad.l + (i + 0.5) * slotW;
+  const volTop = pad.t + candleH + GAP;
 
   let s = `<svg width="${w}" height="${h}" style="display:block;overflow:visible">`;
 
-  // candles
+  // 거래량 영역
+  if (hasVol) {
+    const maxVol = Math.max(...vols) || 1;
+    const avgVol = vols.reduce((a, b) => a + b, 0) / vols.length;
+    // 구분선
+    s += `<line x1="${pad.l}" y1="${volTop - 1}" x2="${w - pad.r}" y2="${volTop - 1}" stroke="#ebebeb" stroke-width="0.8"/>`;
+    // 평균선 (점선)
+    const avgY = volTop + volH * (1 - avgVol / maxVol);
+    s += `<line x1="${pad.l}" y1="${avgY}" x2="${w - pad.r}" y2="${avgY}" stroke="#ccc" stroke-width="0.6" stroke-dasharray="2,2"/>`;
+    // 거래량 바
+    vols.forEach((v, i) => {
+      const bull = candles[i][3] >= candles[i][0];
+      const col  = bull ? '#1D9E75' : '#E24B4A';
+      const bh   = Math.max(1, (v / maxVol) * volH);
+      const isHigh = v > avgVol * 1.8;
+      s += `<rect x="${px(i) - cw/2}" y="${volTop + volH - bh}" width="${cw}" height="${bh}" fill="${col}" opacity="${isHigh ? 0.75 : 0.38}" rx="0.5"/>`;
+    });
+    // 거래량 라벨
+    s += `<text x="${pad.l + 2}" y="${volTop + 7}" font-size="6.5" fill="#ccc" font-family="sans-serif">거래량</text>`;
+  }
+
+  // 캔들
   candles.forEach(([o, hh, l, c], i) => {
-    const x = px(i);
+    const x   = px(i);
     const bull = c >= o;
     const col  = bull ? '#1D9E75' : '#E24B4A';
     const top  = Math.min(py(o), py(c));
@@ -321,9 +348,9 @@ function chartSvg(candles, ma10, ma20, ma30, w, h) {
     if (d) s += `<path d="${d}" stroke="${color}" stroke-width="1.5" fill="none"/>`;
   };
 
-  line(ma10, '#F5A623');  // 주황 — 10주선
-  line(ma20, '#9B59B6');  // 보라 — 20주선
-  line(ma30, '#3498DB');  // 파랑 — 30주선
+  line(ma10, '#F5A623');
+  line(ma20, '#9B59B6');
+  line(ma30, '#3498DB');
 
   s += '</svg>';
   return s;
@@ -345,7 +372,7 @@ function rowHtml(d) {
   const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
   const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
   const { sig, aln } = getBadges(d);
-  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 52);
+  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 70, d.vol_line);
   return `<tr>
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
@@ -371,7 +398,7 @@ function cardHtml(d) {
   const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
   const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
   const { sig, aln } = getBadges(d);
-  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 110);
+  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 140, d.vol_line);
   return `<div class="card">
     <div class="card-header">
       <div><div class="card-name">${d.name}</div><div class="card-code">${d.code}</div></div>

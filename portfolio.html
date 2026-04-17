@@ -312,41 +312,51 @@ function breakBadge(weeks) {
   return '<span style="color:#ccc">—</span>';
 }
 
-function chartSvg(candles, ma10, ma20, ma30, w, h) {
+function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
   if (!candles || !candles.length) return '';
+  const hasVol = vols && vols.length === candles.length;
+  const CANDLE_RATIO = hasVol ? 0.63 : 1.0;
+  const GAP = hasVol ? 3 : 0;
+  const pad = { t: 4, b: 2, l: 2, r: 2 };
+  const iw = w - pad.l - pad.r;
+  const candleH = Math.round((h - pad.t - pad.b) * CANDLE_RATIO);
+  const volH    = hasVol ? (h - pad.t - pad.b - candleH - GAP) : 0;
   const allVals = [
     ...candles.flatMap(c => [c[1], c[2]]),
-    ...ma10.filter(v => v > 0),
-    ...ma20.filter(v => v > 0),
-    ...ma30.filter(v => v > 0)
+    ...ma10.filter(v => v > 0), ...ma20.filter(v => v > 0), ...ma30.filter(v => v > 0)
   ];
-  const min = Math.min(...allVals), max = Math.max(...allVals);
-  if (max === min) return '';
-  const pad = { t: 2, b: 2, l: 2, r: 2 };
-  const iw = w - pad.l - pad.r;
-  const ih = h - pad.t - pad.b;
-  const n = candles.length;
-  const slotW = iw / n;
+  const lo = Math.min(...allVals), hi = Math.max(...allVals);
+  if (hi === lo) return '';
+  const n = candles.length, slotW = iw / n;
   const cw = Math.max(1, slotW * 0.55);
-  const y = v => pad.t + ih - ((v - min) / (max - min)) * ih;
+  const py = v => pad.t + candleH - ((v - lo) / (hi - lo)) * candleH;
   const px = i => pad.l + slotW * i + slotW / 2;
+  const volTop = pad.t + candleH + GAP;
   let s = `<svg width="${w}" height="${h}" style="display:block;overflow:visible">`;
+  if (hasVol) {
+    const maxVol = Math.max(...vols) || 1;
+    const avgVol = vols.reduce((a, b) => a + b, 0) / vols.length;
+    s += `<line x1="${pad.l}" y1="${volTop-1}" x2="${w-pad.r}" y2="${volTop-1}" stroke="#ebebeb" stroke-width="0.8"/>`;
+    const avgY = volTop + volH * (1 - avgVol / maxVol);
+    s += `<line x1="${pad.l}" y1="${avgY}" x2="${w-pad.r}" y2="${avgY}" stroke="#ccc" stroke-width="0.6" stroke-dasharray="2,2"/>`;
+    vols.forEach((v, i) => {
+      const bull = candles[i][3] >= candles[i][0];
+      const bh = Math.max(1, (v / maxVol) * volH);
+      s += `<rect x="${px(i)-cw/2}" y="${volTop+volH-bh}" width="${cw}" height="${bh}" fill="${bull?'#1D9E75':'#E24B4A'}" opacity="${v > avgVol*1.8 ? 0.75 : 0.38}" rx="0.5"/>`;
+    });
+    s += `<text x="${pad.l+2}" y="${volTop+7}" font-size="6.5" fill="#ccc" font-family="sans-serif">거래량</text>`;
+  }
   candles.forEach(([o, hh, l, c], i) => {
-    const x = px(i);
-    const bull = c >= o;
-    const col = bull ? '#1D9E75' : '#E24B4A';
-    s += `<line x1="${x}" y1="${y(hh)}" x2="${x}" y2="${y(l)}" stroke="${col}" stroke-width="0.7"/>`;
-    const top = y(Math.max(o, c)), bot = y(Math.min(o, c));
-    const bh = Math.max(0.5, bot - top);
-    s += `<rect x="${x - cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" rx="0.3"/>`;
+    const x = px(i), bull = c >= o, col = bull ? '#1D9E75' : '#E24B4A';
+    s += `<line x1="${x}" y1="${py(hh)}" x2="${x}" y2="${py(l)}" stroke="${col}" stroke-width="0.7"/>`;
+    const top = py(Math.max(o,c)), bh = Math.max(0.5, py(Math.min(o,c)) - top);
+    s += `<rect x="${x-cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" rx="0.3"/>`;
   });
   function maPath(arr, color) {
-    const pts = arr.map((v, i) => v > 0 ? `${px(i)},${y(v)}` : null).filter(Boolean);
+    const pts = arr.map((v,i) => v>0 ? `${px(i)},${py(v)}` : null).filter(Boolean);
     if (pts.length > 1) s += `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1" opacity="0.7"/>`;
   }
-  maPath(ma10, '#F5A623');
-  maPath(ma20, '#9B59B6');
-  maPath(ma30, '#3498DB');
+  maPath(ma10,'#F5A623'); maPath(ma20,'#9B59B6'); maPath(ma30,'#3498DB');
   s += `</svg>`;
   return s;
 }
@@ -390,7 +400,7 @@ function renderSection(type, codes, label) {
     const chgCls = (d.chg||0) >= 0 ? 'green' : 'red';
     const vw = Math.min(100, Math.round((d.vol / 5) * 100));
     const vc = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#F5A623' : '#E24B4A';
-    const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 52);
+    const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 70, d.vol_line);
     tableHtml += `<tr draggable="true" data-code="${d.code}" data-type="${type}">
       <td><span class="drag-handle">☰</span> <button class="rm-btn" onclick="removeStock('${d.code}','${type}')" title="제거">✕</button></td>
       <td>
@@ -426,7 +436,7 @@ function renderSection(type, codes, label) {
   let cardHtml = `<div class="card-list">`;
   stocks.forEach(d => {
     const chgCls = (d.chg||0) >= 0 ? 'green' : 'red';
-    const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 110);
+    const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 140, d.vol_line);
     cardHtml += `<div class="card" draggable="true" data-code="${d.code}" data-type="${type}">
       <div class="card-header">
         <div style="display:flex;align-items:center;gap:8px">

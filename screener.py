@@ -82,12 +82,13 @@ for i, row in stocks.iterrows():
             else:
                 break
 
-        # 24주 캔들 데이터 (주봉 OHLC)
-        weekly_ohlc = df[['Open','High','Low','Close']].resample('W-FRI').agg(
-            {'Open':'first','High':'max','Low':'min','Close':'last'}
+        # 24주 캔들 데이터 (주봉 OHLC + 거래량)
+        weekly_ohlc = df[['Open','High','Low','Close','Volume']].resample('W-FRI').agg(
+            {'Open':'first','High':'max','Low':'min','Close':'last','Volume':'sum'}
         ).dropna()
         recent = weekly_ohlc.tail(24)
         candles = [[int(r.Open), int(r.High), int(r.Low), int(r.Close)] for _, r in recent.iterrows()]
+        vol_line = [int(r.Volume) for _, r in recent.iterrows()]
 
         # 24주 이동평균선 값
         def ma_line(series, n=24):
@@ -123,6 +124,7 @@ for i, row in stocks.iterrows():
             'above_ma10_weeks': above_ma10_weeks,
             'above_ma30_weeks': above_ma30_weeks,
             'candles': candles,
+            'vol_line': vol_line,
             'ma10_line': ma10_line,
             'ma20_line': ma20_line,
             'ma30_line': ma30_line,
