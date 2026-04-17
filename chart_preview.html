@@ -2,103 +2,205 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>차트 미리보기</title>
 <style>
-body { font-family: -apple-system, sans-serif; background: #f5f5f3; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-.box { background: #fff; border-radius: 16px; padding: 28px 32px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
-h3 { font-size: 14px; color: #555; margin-bottom: 16px; font-weight: 500; }
-.legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: #888; }
-.dot { display: inline-block; width: 20px; height: 2.5px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
-.sq  { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; opacity: 0.85; }
-.sub { font-size: 11px; color: #bbb; margin-top: 8px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, sans-serif; background: #f5f5f3; padding: 24px 16px; }
+.card { background: #fff; border-radius: 14px; border: 0.5px solid #e5e5e5; padding: 16px; max-width: 380px; margin: 0 auto 24px; }
+.card-name { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+.card-code { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+.chart-wrap { border-radius: 10px; overflow: hidden; background: #fafafa; margin: 12px 0 4px; }
+.chart-legend { display: flex; gap: 8px; font-size: 10px; color: #aaa; padding: 0 2px 4px; flex-wrap: wrap; }
+.dot { display: inline-block; width: 20px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 2px; }
+.sq  { display: inline-block; width: 8px; height: 8px; border-radius: 1px; vertical-align: middle; margin-right: 2px; }
+.label { font-size: 11px; color: #888; font-weight: 600; margin-bottom: 6px; }
 </style>
 </head>
 <body>
-<div class="box">
-  <h3>6개월 주봉 캔들차트 — 테이블 셀 크기 (150×52px)</h3>
-  <div id="small"></div>
-  <h3 style="margin-top:28px">6개월 주봉 캔들차트 — 모바일 카드 크기 (340×110px)</h3>
-  <div id="large"></div>
-  <div class="legend">
+
+<div class="label" style="text-align:center;margin-bottom:16px;color:#aaa;font-size:12px;font-weight:400">거래량 추가 차트 미리보기 — 두 가지 안</div>
+
+<!-- 안 1 -->
+<div class="card">
+  <div class="card-name">안 1 — 차트 하단에 거래량 바 추가</div>
+  <div class="card-code">캔들 65% + 거래량 35% 비율</div>
+  <div class="chart-wrap" id="chart1"></div>
+  <div class="chart-legend">
     <span><span class="dot" style="background:#F5A623"></span>10주선</span>
     <span><span class="dot" style="background:#9B59B6"></span>20주선</span>
     <span><span class="dot" style="background:#3498DB"></span>30주선</span>
-    <span><span class="sq" style="background:#1D9E75"></span>양봉</span>
-    <span><span class="sq" style="background:#E24B4A"></span>음봉</span>
+    <span><span class="sq" style="background:#1D9E75;opacity:0.6"></span>양봉 거래량</span>
+    <span><span class="sq" style="background:#E24B4A;opacity:0.6"></span>음봉 거래량</span>
+    <span><span class="dot" style="background:#aaa;border-top:1px dashed #aaa"></span>평균</span>
   </div>
-  <div class="sub">* 가상 데이터 기준 — 실제 종목은 스캔 후 반영</div>
+</div>
+
+<!-- 안 2 -->
+<div class="card">
+  <div class="card-name">안 2 — 거래량을 캔들 뒤에 반투명</div>
+  <div class="card-code">거래량을 배경 바로 표시 (캔들과 겹침)</div>
+  <div class="chart-wrap" id="chart2"></div>
+  <div class="chart-legend">
+    <span><span class="dot" style="background:#F5A623"></span>10주선</span>
+    <span><span class="dot" style="background:#9B59B6"></span>20주선</span>
+    <span><span class="dot" style="background:#3498DB"></span>30주선</span>
+    <span><span class="sq" style="background:#1D9E75;opacity:0.25"></span>거래량 배경</span>
+  </div>
 </div>
 
 <script>
-// 가상 24주 데이터 (우상향 추세 + 일부 조정)
+// 24주 모의 데이터 (하락 후 급등)
 const candles = [
-  [9800,10300,9600,10100],[10000,10400,9850,10050],[10000,10500,9900,10400],
-  [10300,10600,10000,10100],[10000,10300,9700,9800],[9700,10000,9500,9850],
-  [9800,10200,9700,10150],[10100,10600,10000,10500],[10400,11000,10300,10900],
-  [10800,11400,10700,11200],[11100,11700,11000,11600],[11500,12100,11400,12000],
-  [11900,12500,11700,12300],[12200,12800,12000,12700],[12600,13300,12500,13100],
-  [13000,13700,12800,13500],[13400,14100,13200,13900],[13800,14600,13700,14400],
-  [14300,15000,14100,14800],[14700,15500,14600,15300],[15200,16000,15000,15700],
-  [15600,16200,15300,15900],[15800,16500,15500,16300],[16200,17000,16000,16700]
+  [420,440,400,415],[415,425,395,400],[400,412,382,386],[386,396,366,371],
+  [371,379,356,361],[361,371,349,353],[353,363,341,346],[346,356,333,339],
+  [339,349,326,331],[331,343,319,323],[323,336,316,321],[321,333,311,316],
+  [316,329,309,313],[313,326,306,311],[311,323,303,309],[309,321,301,306],
+  [306,319,299,303],[303,316,296,299],[299,313,293,296],[296,311,291,309],
+  [309,326,306,321],[321,585,319,572],[572,625,562,592],[592,685,582,672]
 ];
-const ma10 = [0,0,0,0,0,0,0,0,0,10285,10395,10610,10880,11140,11430,11730,12040,12365,12710,13080,13475,13895,14345,14820];
-const ma20 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10963,11280,11620,12000,12420];
-const ma30 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+const volumes = [
+  120,100,140,160,180,130,110,150,120,140,
+  130,110,120,135,125,140,130,115,120,210,
+  380,850,620,980
+];
 
-function chartSvg(candles, ma10, ma20, ma30, w, h) {
-  const allVals = [
-    ...candles.flatMap(c => [c[1], c[2]]),
-    ...ma10.filter(v => v > 0),
-    ...ma20.filter(v => v > 0),
-  ];
-  const lo = Math.min(...allVals), hi = Math.max(...allVals);
-  const range = hi - lo || 1;
-  const pad = { t: 6, b: 6, l: 4, r: 4 };
-  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
-  const n = candles.length;
-  const slotW = iw / n;
-  const cw = Math.max(1.5, slotW * 0.55);
-
-  const py = v => pad.t + ih - ((v - lo) / range * ih);
-  const px = i => pad.l + (i + 0.5) * slotW;
-
-  let s = `<svg width="${w}" height="${h}" style="display:block;border-radius:6px;background:#fafafa">`;
-
-  // grid lines
-  for (let g = 0; g <= 4; g++) {
-    const y = pad.t + ih * g / 4;
-    s += `<line x1="${pad.l}" y1="${y}" x2="${w-pad.r}" y2="${y}" stroke="#f0f0f0" stroke-width="0.5"/>`;
-  }
-
-  // candles
-  candles.forEach(([o, hh, l, c], i) => {
-    const x = px(i), bull = c >= o, col = bull ? '#1D9E75' : '#E24B4A';
-    const top = Math.min(py(o), py(c)), bh = Math.max(1.5, Math.abs(py(o) - py(c)));
-    s += `<line x1="${x}" y1="${py(hh)}" x2="${x}" y2="${py(l)}" stroke="${col}" stroke-width="1" opacity="0.6"/>`;
-    s += `<rect x="${x-cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" opacity="0.85" rx="0.5"/>`;
-  });
-
-  const line = (vals, color, sw=1.5) => {
-    let d = '', prev = null;
-    vals.forEach((v, i) => {
-      if (!v) { prev = null; return; }
-      const x = px(i), y = py(v);
-      d += prev === null ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`;
-      prev = v;
-    });
-    if (d) s += `<path d="${d}" stroke="${color}" stroke-width="${sw}" fill="none"/>`;
-  };
-
-  line(ma10, '#F5A623');
-  line(ma20, '#9B59B6');
-  line(ma30, '#3498DB');
-
-  s += '</svg>';
-  return s;
+// MA 계산
+const closes = candles.map(c=>c[3]);
+const ma10=[], ma20=[], ma30=[];
+for(let i=0;i<24;i++){
+  ma10.push(i>=9  ? closes.slice(i-9,i+1).reduce((a,b)=>a+b)/10  : 0);
+  ma20.push(i>=19 ? closes.slice(i-19,i+1).reduce((a,b)=>a+b)/20 : 0);
+  ma30.push(0);
 }
 
-document.getElementById('small').innerHTML = chartSvg(candles, ma10, ma20, ma30, 150, 52);
-document.getElementById('large').innerHTML = chartSvg(candles, ma10, ma20, ma30, 340, 110);
+// ── 안 1: 분리형 ─────────────────────────
+function chart1(id, w, h) {
+  const CANDLE_RATIO = 0.63;
+  const GAP = 4;
+  const candleH = Math.round(h * CANDLE_RATIO);
+  const volH    = h - candleH - GAP;
+  const pad = {t:4,b:2,l:4,r:4};
+  const iw = w - pad.l - pad.r;
+  const n = candles.length;
+  const slotW = iw / n;
+  const cw = Math.max(1.5, slotW * 0.58);
+
+  const allC = candles.flatMap(c=>[c[1],c[2]]);
+  const maV  = [...ma10,...ma20].filter(v=>v>0);
+  const minC = Math.min(...allC,...maV);
+  const maxC = Math.max(...allC,...maV);
+  const yc = v => pad.t + candleH - ((v-minC)/(maxC-minC))*candleH;
+  const xp = i => pad.l + slotW*i + slotW/2;
+
+  const volTop = pad.t + candleH + GAP;
+  const maxVol = Math.max(...volumes);
+  const avgVol = volumes.reduce((a,b)=>a+b)/volumes.length;
+
+  let s = `<svg width="${w}" height="${h}" style="display:block">`;
+
+  // grid
+  [0,1,2,3].forEach(g=>{
+    const gy = pad.t + (candleH/3)*g;
+    s += `<line x1="${pad.l}" y1="${gy}" x2="${w-pad.r}" y2="${gy}" stroke="#f0f0f0" stroke-width="0.5"/>`;
+  });
+
+  // vol separator
+  s += `<line x1="${pad.l}" y1="${volTop-2}" x2="${w-pad.r}" y2="${volTop-2}" stroke="#ebebeb" stroke-width="0.8"/>`;
+
+  // vol avg dashed
+  const avgY = volTop + volH*(1 - avgVol/maxVol);
+  s += `<line x1="${pad.l}" y1="${avgY}" x2="${w-pad.r}" y2="${avgY}" stroke="#ccc" stroke-width="0.6" stroke-dasharray="2,2"/>`;
+
+  // vol bars
+  volumes.forEach((v,i)=>{
+    const bull = candles[i][3]>=candles[i][0];
+    const col  = bull?'#1D9E75':'#E24B4A';
+    const bh   = Math.max(1, (v/maxVol)*volH);
+    const isHigh = v > avgVol*1.8;
+    s += `<rect x="${xp(i)-cw/2}" y="${volTop+volH-bh}" width="${cw}" height="${bh}" fill="${col}" opacity="${isHigh?0.75:0.38}" rx="0.5"/>`;
+  });
+
+  // vol label
+  s += `<text x="${pad.l+2}" y="${volTop+8}" font-size="7" fill="#ccc" font-family="sans-serif">거래량</text>`;
+
+  // candles
+  candles.forEach(([o,hh,l,c],i)=>{
+    const x=xp(i), bull=c>=o, col=bull?'#1D9E75':'#E24B4A';
+    s += `<line x1="${x}" y1="${yc(hh)}" x2="${x}" y2="${yc(l)}" stroke="${col}" stroke-width="0.8"/>`;
+    const top=yc(Math.max(o,c)), bot=yc(Math.min(o,c));
+    s += `<rect x="${x-cw/2}" y="${top}" width="${cw}" height="${Math.max(0.8,bot-top)}" fill="${col}" rx="0.4"/>`;
+  });
+
+  // MA
+  function mp(arr,col){
+    const pts=arr.map((v,i)=>v>0?`${xp(i)},${yc(v)}`:null).filter(Boolean);
+    if(pts.length>1) s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.85"/>`;
+  }
+  mp(ma10,'#F5A623'); mp(ma20,'#9B59B6'); mp(ma30,'#3498DB');
+
+  s+=`</svg>`;
+  document.getElementById(id).innerHTML=s;
+}
+
+// ── 안 2: 배경 겹침형 ─────────────────────────
+function chart2(id, w, h) {
+  const pad={t:4,b:4,l:4,r:4};
+  const iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+  const n=candles.length;
+  const slotW=iw/n;
+  const cw=Math.max(1.5,slotW*0.58);
+
+  const allC=candles.flatMap(c=>[c[1],c[2]]);
+  const maV=[...ma10,...ma20].filter(v=>v>0);
+  const minC=Math.min(...allC,...maV);
+  const maxC=Math.max(...allC,...maV);
+  const yc=v=>pad.t+ih-((v-minC)/(maxC-minC))*ih;
+  const xp=i=>pad.l+slotW*i+slotW/2;
+  const maxVol=Math.max(...volumes);
+  const avgVol=volumes.reduce((a,b)=>a+b)/volumes.length;
+
+  let s=`<svg width="${w}" height="${h}" style="display:block">`;
+
+  // grid
+  [0,1,2,3].forEach(g=>{
+    s+=`<line x1="${pad.l}" y1="${pad.t+(ih/3)*g}" x2="${w-pad.r}" y2="${pad.t+(ih/3)*g}" stroke="#f0f0f0" stroke-width="0.5"/>`;
+  });
+
+  // vol bars (bg, max 60% of chart height)
+  const maxBarH = ih * 0.6;
+  volumes.forEach((v,i)=>{
+    const bull=candles[i][3]>=candles[i][0];
+    const bh=Math.max(1,(v/maxVol)*maxBarH);
+    const isHigh=v>avgVol*1.8;
+    s+=`<rect x="${xp(i)-cw/2}" y="${pad.t+ih-bh}" width="${cw}" height="${bh}" fill="${bull?'#1D9E75':'#E24B4A'}" opacity="${isHigh?0.2:0.1}" rx="0.5"/>`;
+  });
+
+  // avg vol line
+  const avgBH=(avgVol/maxVol)*maxBarH;
+  s+=`<line x1="${pad.l}" y1="${pad.t+ih-avgBH}" x2="${w-pad.r}" y2="${pad.t+ih-avgBH}" stroke="#ccc" stroke-width="0.6" stroke-dasharray="2,2"/>`;
+
+  // candles
+  candles.forEach(([o,hh,l,c],i)=>{
+    const x=xp(i),bull=c>=o,col=bull?'#1D9E75':'#E24B4A';
+    s+=`<line x1="${x}" y1="${yc(hh)}" x2="${x}" y2="${yc(l)}" stroke="${col}" stroke-width="0.8"/>`;
+    const top=yc(Math.max(o,c)),bot=yc(Math.min(o,c));
+    s+=`<rect x="${x-cw/2}" y="${top}" width="${cw}" height="${Math.max(0.8,bot-top)}" fill="${col}" rx="0.4"/>`;
+  });
+
+  // MA
+  function mp(arr,col){
+    const pts=arr.map((v,i)=>v>0?`${xp(i)},${yc(v)}`:null).filter(Boolean);
+    if(pts.length>1) s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.85"/>`;
+  }
+  mp(ma10,'#F5A623'); mp(ma20,'#9B59B6'); mp(ma30,'#3498DB');
+
+  s+=`</svg>`;
+  document.getElementById(id).innerHTML=s;
+}
+
+chart1('chart1', 348, 140);
+chart2('chart2', 348, 110);
 </script>
 </body>
 </html>
