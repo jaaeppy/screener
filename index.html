@@ -26,7 +26,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 .green { color: #1D9E75; } .red { color: #E24B4A; } .amber { color: #BA7517; } .purple { color: #8B1A7E; }
 
 /* Stats */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
 .stat { background: #fff; border-radius: 10px; padding: 14px; border: 0.5px solid #e5e5e5; }
 .stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
 .stat-val { font-size: 24px; font-weight: 500; }
@@ -63,6 +63,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 .badge.bull   { background: #EAF3DE; color: #3B6D11; }
 .badge.bear   { background: #FCEBEB; color: #A32D2D; }
 .badge.first  { background: #FDE8F8; color: #8B1A7E; }
+.badge.align  { background: #D4F0E6; color: #0D6B4E; font-weight: 600; }
 .badge.weeks  { background: #F0F0F0; color: #555; }
 .kospi  { background: #E6F1FB; color: #185FA5; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
 .kosdaq { background: #EEEDFE; color: #534AB7; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
@@ -124,7 +125,7 @@ th[data-tip]:hover::after { opacity: 1; }
 @media (max-width: 768px) {
   .wrap { padding: 16px 12px; }
   h1 { font-size: 17px; margin-bottom: 14px; }
-  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+  .stats { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
   .stat { padding: 12px; }
   .stat-val { font-size: 20px; }
   .filter-divider { display: none; }
@@ -171,6 +172,7 @@ th[data-tip]:hover::after { opacity: 1; }
         <button class="btn" id="btn-strong"  onclick="setSignal('strong',this)">강한돌파</button>
         <button class="btn" id="btn-watch"   onclick="setSignal('watch',this)">관찰중</button>
         <button class="btn" id="btn-first"   onclick="setSignal('first',this)">최초돌파</button>
+        <button class="btn" id="btn-align"   onclick="setSignal('align',this)">전체 정배열</button>
       </div>
     </div>
     <input class="search" type="text" placeholder="종목명 검색..." oninput="render()" id="search">
@@ -198,7 +200,7 @@ th[data-tip]:hover::after { opacity: 1; }
           <th onclick="sort('above_ma10_weeks')" data-tip="10주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주선 돌파</th>
           <th onclick="sort('above_ma30_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 30주선 위로 올라온 종목">30주선 돌파</th>
           <th onclick="sort('signal')" data-tip="강한돌파: 30주선 괴리율 &gt;3% AND&#10;주간등락 &gt;2% AND 거래량강도 &gt;1.5x&#10;AND 30주선 기울기 우상향&#10;&#10;관찰중: 30주선 위 AND 30주선 우상향&#10;&#10;이탈: 위 조건 미충족">신호</th>
-          <th data-tip="정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
+          <th data-tip="전체 정배열: 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선&#10;정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -240,7 +242,7 @@ function setMarket(v, el) {
 }
 function setSignal(v, el) {
   filterSignal = filterSignal === v ? 'all' : v;
-  document.querySelectorAll('#btn-strong,#btn-watch,#btn-first').forEach(b => b.classList.remove('active-signal'));
+  document.querySelectorAll('#btn-strong,#btn-watch,#btn-first,#btn-align').forEach(b => b.classList.remove('active-signal'));
   if (filterSignal !== 'all') el.classList.add('active-signal');
   render();
 }
@@ -272,7 +274,7 @@ function breakBadge(weeks) {
 }
 
 // ── SVG 캔들차트 (거래량 포함) ──────────────────────
-function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
+function chartSvg(candles, ma5, ma10, ma20, ma30, w, h, vols) {
   if (!candles || !candles.length) return '';
 
   const hasVol = vols && vols.length === candles.length;
@@ -285,6 +287,7 @@ function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
 
   const allVals = [
     ...candles.flatMap(c => [c[1], c[2]]),
+    ...ma5.filter(v => v > 0),
     ...ma10.filter(v => v > 0),
     ...ma20.filter(v => v > 0),
     ...ma30.filter(v => v > 0)
@@ -348,9 +351,10 @@ function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
     if (d) s += `<path d="${d}" stroke="${color}" stroke-width="1.5" fill="none"/>`;
   };
 
-  line(ma10, '#F5A623');
-  line(ma20, '#9B59B6');
   line(ma30, '#3498DB');
+  line(ma20, '#9B59B6');
+  line(ma10, '#F5A623');
+  line(ma5,  '#E24B4A');
 
   s += '</svg>';
   return s;
@@ -359,9 +363,14 @@ function chartSvg(candles, ma10, ma20, ma30, w, h, vols) {
 // ── 공통 배지 계산 ──────────────────────────────
 function getBadges(d) {
   const sig = { strong: '<span class="badge strong">강한돌파</span>', watch: '<span class="badge watch">관찰중</span>', weak: '<span class="badge weak">이탈</span>' };
-  const aln = (d.ma10 && d.ma30)
-    ? (d.ma10 > d.ma30 ? '<span class="badge bull">정배열</span>' : '<span class="badge bear">역배열</span>')
-    : '';
+  let aln;
+  if (d.full_align) {
+    aln = '<span class="badge align">전체 정배열</span>';
+  } else if (d.ma10 && d.ma30) {
+    aln = d.ma10 > d.ma30 ? '<span class="badge bull">정배열</span>' : '<span class="badge bear">역배열</span>';
+  } else {
+    aln = '';
+  }
   return { sig: sig[d.signal], aln };
 }
 
@@ -372,7 +381,7 @@ function rowHtml(d) {
   const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
   const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
   const { sig, aln } = getBadges(d);
-  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 70, d.vol_line);
+  const chart = chartSvg(d.candles, d.ma5_line||[], d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 70, d.vol_line);
   return `<tr>
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
@@ -382,7 +391,7 @@ function rowHtml(d) {
     <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc};margin-left:2px">${d.vol}x</span></div></td>
     <td style="padding-top:6px;padding-bottom:6px">
       ${chart || '<span style="color:#ccc">—</span>'}
-      ${chart ? `<div class="chart-legend"><span><span class="legend-dot" style="background:#F5A623"></span>10주</span><span><span class="legend-dot" style="background:#9B59B6"></span>20주</span><span><span class="legend-dot" style="background:#3498DB"></span>30주</span></div>` : ''}
+      ${chart ? `<div class="chart-legend"><span><span class="legend-dot" style="background:#E24B4A"></span>5주</span><span><span class="legend-dot" style="background:#F5A623"></span>10주</span><span><span class="legend-dot" style="background:#9B59B6"></span>20주</span><span><span class="legend-dot" style="background:#3498DB"></span>30주</span></div>` : ''}
     </td>
     <td>${breakBadge(d.above_ma10_weeks)}</td>
     <td>${breakBadge(d.above_ma30_weeks)}</td>
@@ -398,7 +407,7 @@ function cardHtml(d) {
   const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
   const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
   const { sig, aln } = getBadges(d);
-  const chart = chartSvg(d.candles, d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 140, d.vol_line);
+  const chart = chartSvg(d.candles, d.ma5_line||[], d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 140, d.vol_line);
   return `<div class="card">
     <div class="card-header">
       <div><div class="card-name">${d.name}</div><div class="card-code">${d.code}</div></div>
@@ -418,6 +427,7 @@ function cardHtml(d) {
     </div>
     ${chart ? `<div class="card-chart">${chart}</div>
     <div class="card-chart-legend">
+      <span><span class="legend-dot" style="background:#E24B4A;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>5주선</span>
       <span><span class="legend-dot" style="background:#F5A623;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>10주선</span>
       <span><span class="legend-dot" style="background:#9B59B6;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>20주선</span>
       <span><span class="legend-dot" style="background:#3498DB;display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:2px"></span>30주선</span>
@@ -444,6 +454,7 @@ function render() {
     if (filterSignal === 'strong' && d.signal !== 'strong') return false;
     if (filterSignal === 'watch'  && d.signal !== 'watch')  return false;
     if (filterSignal === 'first'  && d.above_ma30_weeks !== 1) return false;
+    if (filterSignal === 'align'  && !d.full_align) return false;
     if (activeSector !== 'all' && d.sector !== activeSector) return false;
     if (q && !d.name.toLowerCase().includes(q) && !d.code.includes(q)) return false;
     return true;
@@ -460,12 +471,14 @@ function render() {
   const strong     = data.filter(d => d.signal === 'strong').length;
   const watch      = data.filter(d => d.signal === 'watch').length;
   const firstBreak = data.filter(d => d.above_ma30_weeks === 1).length;
+  const alignCount = data.filter(d => d.full_align).length;
 
   document.getElementById('stats').innerHTML = `
     <div class="stat"><div class="stat-label">전체 종목</div><div class="stat-val">${data.length}</div></div>
     <div class="stat"><div class="stat-label">강한돌파</div><div class="stat-val green">${strong}</div></div>
     <div class="stat"><div class="stat-label">관찰중</div><div class="stat-val amber">${watch}</div></div>
     <div class="stat"><div class="stat-label">최초돌파 (30주)</div><div class="stat-val purple">${firstBreak}</div></div>
+    <div class="stat"><div class="stat-label">전체 정배열</div><div class="stat-val" style="color:#0D6B4E">${alignCount}</div></div>
   `;
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 

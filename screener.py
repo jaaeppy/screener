@@ -37,11 +37,13 @@ for i, row in stocks.iterrows():
         if len(weekly) < 32:
             continue
 
+        ma5  = weekly.rolling(5).mean()
         ma10 = weekly.rolling(10).mean()
         ma20 = weekly.rolling(20).mean()
         ma30 = weekly.rolling(30).mean()
 
         price     = float(weekly.iloc[-1])
+        ma5_val   = float(ma5.iloc[-1]) if not pd.isna(ma5.iloc[-1]) else 0.0
         ma10_val  = float(ma10.iloc[-1])
         ma20_val  = float(ma20.iloc[-1]) if not pd.isna(ma20.iloc[-1]) else 0.0
         ma30_val  = float(ma30.iloc[-1])
@@ -49,6 +51,11 @@ for i, row in stocks.iterrows():
 
         if pd.isna(ma30_val) or ma30_val == 0:
             continue
+
+        full_align = (
+            ma5_val > 0 and ma10_val > 0 and ma20_val > 0 and ma30_val > 0 and
+            price > ma5_val > ma10_val > ma20_val > ma30_val
+        )
 
         ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
@@ -95,6 +102,7 @@ for i, row in stocks.iterrows():
             tail = series.tail(n).tolist()
             return [int(v) if not pd.isna(v) and v != 0 else 0 for v in tail]
 
+        ma5_line  = ma_line(ma5)
         ma10_line = ma_line(ma10)
         ma20_line = ma_line(ma20)
         ma30_line = ma_line(ma30)
@@ -121,10 +129,12 @@ for i, row in stocks.iterrows():
             'vol': vol_ratio,
             'ma30_slope': ma30_slope,
             'signal': signal,
+            'full_align': full_align,
             'above_ma10_weeks': above_ma10_weeks,
             'above_ma30_weeks': above_ma30_weeks,
             'candles': candles,
             'vol_line': vol_line,
+            'ma5_line': ma5_line,
             'ma10_line': ma10_line,
             'ma20_line': ma20_line,
             'ma30_line': ma30_line,
