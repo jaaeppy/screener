@@ -13,11 +13,20 @@ except:
     print("  sector_map.json 없음 — 업종 정보 없이 진행")
 
 print("코스피/코스닥 종목 목록 가져오는 중...")
-kospi = fdr.StockListing('KOSPI')[['Code','Name']].copy()
-kospi['market'] = 'KOSPI'
-kosdaq = fdr.StockListing('KOSDAQ')[['Code','Name']].copy()
-kosdaq['market'] = 'KOSDAQ'
+kospi_listing  = fdr.StockListing('KOSPI')
+kosdaq_listing = fdr.StockListing('KOSDAQ')
+
+kospi  = kospi_listing[['Code','Name']].copy();  kospi['market']  = 'KOSPI'
+kosdaq = kosdaq_listing[['Code','Name']].copy(); kosdaq['market'] = 'KOSDAQ'
 stocks = pd.concat([kospi, kosdaq], ignore_index=True)
+
+# 발행주식수 맵 (시가총액 계산용)
+shares_map = {}
+for listing_df in [kospi_listing, kosdaq_listing]:
+    if 'Stocks' in listing_df.columns:
+        for _, r in listing_df.iterrows():
+            if pd.notna(r.get('Stocks')) and r['Stocks'] > 0:
+                shares_map[r['Code']] = int(r['Stocks'])
 
 end = datetime.today()
 start = end - timedelta(days=700)
@@ -107,6 +116,9 @@ for i, row in stocks.iterrows():
         ma20_line = ma_line(ma20)
         ma30_line = ma_line(ma30)
 
+        shares = shares_map.get(code, 0)
+        market_cap = int(price * shares) if shares else 0
+
         if gap > 3 and chg > 2 and vol_ratio > 1.5 and ma30_slope > 0:
             signal = 'strong'
         elif gap > 0 and ma30_slope > 0:
@@ -120,6 +132,7 @@ for i, row in stocks.iterrows():
             'market': market,
             'sector': sector_map.get(code, '기타'),
             'price': int(price),
+            'market_cap': market_cap,
             'ma10': int(ma10_val) if not pd.isna(ma10_val) else 0,
             'ma20': int(ma20_val),
             'ma30': int(ma30_val),

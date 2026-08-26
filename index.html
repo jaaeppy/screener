@@ -192,6 +192,7 @@ th[data-tip]:hover::after { opacity: 1; }
         <tr>
           <th onclick="sort('name')">종목</th>
           <th onclick="sort('price')">현재가</th>
+          <th onclick="sort('market_cap')">시가총액</th>
           <th onclick="sort('chg')">주간등락</th>
           <th onclick="sort('ma10gap')">10주선 괴리율</th>
           <th onclick="sort('ma30gap')">30주선 괴리율</th>
@@ -259,6 +260,12 @@ function sort(k) {
   render();
 }
 function sigOrd(s) { return s === 'strong' ? 0 : s === 'watch' ? 1 : 2; }
+function fmtCap(v) {
+  if (!v || v <= 0) return '<span style="color:#ccc">—</span>';
+  if (v >= 1e12) return `<span style="font-weight:500">${(v/1e12).toFixed(1)}조</span>`;
+  if (v >= 1e8)  return `<span style="font-weight:500">${Math.round(v/1e8).toLocaleString()}억</span>`;
+  return `<span style="font-weight:500">${Math.round(v/1e4).toLocaleString()}만</span>`;
+}
 function fmtGap(v) {
   if (v == null || isNaN(v)) return '<span style="color:#ccc">—</span>';
   const c = v >= 0 ? '#1D9E75' : '#E24B4A';
@@ -385,6 +392,7 @@ function rowHtml(d) {
   return `<tr>
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
+    <td>${fmtCap(d.market_cap)}</td>
     <td style="color:${gc};font-weight:500">${d.chg>=0?'+':''}${d.chg}%</td>
     <td>${fmtGap(d.ma10gap)}</td>
     <td style="color:${gapc};font-weight:500">${d.ma30gap>=0?'+':''}${d.ma30gap}%</td>
@@ -421,6 +429,7 @@ function cardHtml(d) {
     <div class="card-divider"></div>
     <div class="card-grid">
       <div><div class="card-item-label">현재가</div><div class="card-item-val">${d.price.toLocaleString()}원</div></div>
+      <div><div class="card-item-label">시가총액</div><div class="card-item-val">${fmtCap(d.market_cap)}</div></div>
       <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
       <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
       <div><div class="card-item-label">30주선 괴리율</div><div class="card-item-val" style="color:${gapc}">${d.ma30gap>=0?'+':''}${d.ma30gap}%</div></div>
@@ -482,7 +491,7 @@ function render() {
   `;
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 
-  const emptyRow  = '<tr><td colspan="11" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+  const emptyRow  = '<tr><td colspan="12" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
   const emptyCard = '<div style="text-align:center;color:#aaa;padding:40px">조건에 맞는 종목이 없습니다</div>';
 
   if (!rows.length) {
@@ -496,7 +505,7 @@ function render() {
     rows.forEach(d => { const sec = d.sector || '기타'; if (!grouped[sec]) grouped[sec] = []; grouped[sec].push(d); });
     const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
     document.getElementById('tbody').innerHTML = sorted.map(([sec, stocks]) =>
-      `<tr class="sector-group-row"><td colspan="11">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
+      `<tr class="sector-group-row"><td colspan="12">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
       stocks.map(rowHtml).join('')
     ).join('');
     document.getElementById('cardList').innerHTML = sorted.map(([sec, stocks]) =>
