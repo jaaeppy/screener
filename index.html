@@ -193,9 +193,10 @@ th[data-tip]:hover::after { opacity: 1; }
           <th onclick="sort('name')">종목</th>
           <th onclick="sort('price')">현재가</th>
           <th onclick="sort('market_cap')">시가총액</th>
+          <th onclick="sort('day_chg')">일간등락</th>
           <th onclick="sort('chg')">주간등락</th>
+          <th onclick="sort('ma5gap')">5주선 괴리율</th>
           <th onclick="sort('ma10gap')">10주선 괴리율</th>
-          <th onclick="sort('ma30gap')">30주선 괴리율</th>
           <th onclick="sort('vol')" data-tip="이번 주 거래량 ÷ 직전 10주 평균 거래량&#10;2x 이상: 강한 거래 (초록)&#10;1x~2x: 보통 (주황)&#10;1x 미만: 약한 거래 (빨강)">거래량강도</th>
           <th>6개월 차트</th>
           <th onclick="sort('above_ma10_weeks')" data-tip="10주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주선 돌파</th>
@@ -393,9 +394,10 @@ function rowHtml(d) {
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
     <td>${fmtCap(d.market_cap)}</td>
+    <td style="color:${d.day_chg>=0?'#1D9E75':'#E24B4A'};font-weight:500">${d.day_chg!=null?(d.day_chg>=0?'+':'')+d.day_chg+'%':'—'}</td>
     <td style="color:${gc};font-weight:500">${d.chg>=0?'+':''}${d.chg}%</td>
+    <td>${fmtGap(d.ma5gap)}</td>
     <td>${fmtGap(d.ma10gap)}</td>
-    <td style="color:${gapc};font-weight:500">${d.ma30gap>=0?'+':''}${d.ma30gap}%</td>
     <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc};margin-left:2px">${d.vol}x</span></div></td>
     <td style="padding-top:6px;padding-bottom:6px">
       ${chart || '<span style="color:#ccc">—</span>'}
@@ -430,9 +432,10 @@ function cardHtml(d) {
     <div class="card-grid">
       <div><div class="card-item-label">현재가</div><div class="card-item-val">${d.price.toLocaleString()}원</div></div>
       <div><div class="card-item-label">시가총액</div><div class="card-item-val">${fmtCap(d.market_cap)}</div></div>
+      <div><div class="card-item-label">일간등락</div><div class="card-item-val" style="color:${d.day_chg>=0?'#1D9E75':'#E24B4A'}">${d.day_chg!=null?(d.day_chg>=0?'+':'')+d.day_chg+'%':'—'}</div></div>
       <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
+      <div><div class="card-item-label">5주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma5gap)}</div></div>
       <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
-      <div><div class="card-item-label">30주선 괴리율</div><div class="card-item-val" style="color:${gapc}">${d.ma30gap>=0?'+':''}${d.ma30gap}%</div></div>
     </div>
     ${chart ? `<div class="card-chart">${chart}</div>
     <div class="card-chart-legend">
@@ -491,7 +494,7 @@ function render() {
   `;
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 
-  const emptyRow  = '<tr><td colspan="12" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+  const emptyRow  = '<tr><td colspan="13" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
   const emptyCard = '<div style="text-align:center;color:#aaa;padding:40px">조건에 맞는 종목이 없습니다</div>';
 
   if (!rows.length) {
@@ -505,7 +508,7 @@ function render() {
     rows.forEach(d => { const sec = d.sector || '기타'; if (!grouped[sec]) grouped[sec] = []; grouped[sec].push(d); });
     const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
     document.getElementById('tbody').innerHTML = sorted.map(([sec, stocks]) =>
-      `<tr class="sector-group-row"><td colspan="12">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
+      `<tr class="sector-group-row"><td colspan="13">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
       stocks.map(rowHtml).join('')
     ).join('');
     document.getElementById('cardList').innerHTML = sorted.map(([sec, stocks]) =>

@@ -66,6 +66,11 @@ for i, row in stocks.iterrows():
             price > ma5_val > ma10_val > ma20_val > ma30_val
         )
 
+        day_close = float(df['Close'].iloc[-1])
+        day_prev  = float(df['Close'].iloc[-2])
+        day_chg   = round((day_close - day_prev) / day_prev * 100, 1) if day_prev else 0.0
+
+        ma5gap  = round((price - ma5_val)  / ma5_val  * 100, 1) if ma5_val  != 0 else 0.0
         ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
         prev_price = float(weekly.iloc[-2])
@@ -136,7 +141,9 @@ for i, row in stocks.iterrows():
             'ma10': int(ma10_val) if not pd.isna(ma10_val) else 0,
             'ma20': int(ma20_val),
             'ma30': int(ma30_val),
+            'day_chg': day_chg,
             'chg': chg,
+            'ma5gap': ma5gap,
             'ma10gap': ma10gap,
             'ma30gap': gap,
             'vol': vol_ratio,
