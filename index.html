@@ -157,7 +157,7 @@ th[data-tip]:hover::after { opacity: 1; }
     <span class="updated" id="updated"></span>
   </div>
 
-  <div class="stats" id="stats"></div>
+  <div class="stats" id="stats" style="grid-template-columns:repeat(4,1fr)"></div>
 
   <div class="top-row">
     <div class="filter-area">
@@ -169,8 +169,7 @@ th[data-tip]:hover::after { opacity: 1; }
       <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">신호</span>
-        <button class="btn" id="btn-strong"  onclick="setSignal('strong',this)">강한돌파</button>
-        <button class="btn" id="btn-watch"   onclick="setSignal('watch',this)">관찰중</button>
+        <button class="btn" id="btn-firstfa" onclick="setSignal('firstfa',this)">최초정배열</button>
         <button class="btn" id="btn-first"   onclick="setSignal('first',this)">최초돌파</button>
         <button class="btn" id="btn-align"   onclick="setSignal('align',this)">전체 정배열</button>
       </div>
@@ -197,11 +196,14 @@ th[data-tip]:hover::after { opacity: 1; }
           <th onclick="sort('chg')">주간등락</th>
           <th onclick="sort('ma5gap')">5주선 괴리율</th>
           <th onclick="sort('ma10gap')">10주선 괴리율</th>
-          <th onclick="sort('vol')" data-tip="이번 주 거래량 ÷ 직전 10주 평균 거래량&#10;2x 이상: 강한 거래 (초록)&#10;1x~2x: 보통 (주황)&#10;1x 미만: 약한 거래 (빨강)">거래량강도</th>
+          <th onclick="sort('cur_peak_gap')" data-tip="현재 정배열 사이클에서 10주선 괴리율이 가장 낮았던 주&#10;(MTS 방식: 음수 = 과열)">현재 최고 괴리율</th>
+          <th onclick="sort('prev_peak_gap')" data-tip="직전 정배열 사이클의 최고 과열 주&#10;(MTS 방식: 음수 = 과열)">직전 최고 괴리율</th>
+          <th onclick="sort('align_avg50')" data-tip="2년 내 전체 정배열 구간 괴리율 상위 50% 평균&#10;종목별 자동 보정 — 기준값으로 현재 과열 판단">정배열 평균(50%)</th>
           <th>6개월 차트</th>
           <th onclick="sort('above_ma10_weeks')" data-tip="10주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주선 돌파</th>
           <th onclick="sort('above_ma30_weeks')" data-tip="30주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 30주선 위로 올라온 종목">30주선 돌파</th>
-          <th onclick="sort('signal')" data-tip="강한돌파: 30주선 괴리율 &gt;3% AND&#10;주간등락 &gt;2% AND 거래량강도 &gt;1.5x&#10;AND 30주선 기울기 우상향&#10;&#10;관찰중: 30주선 위 AND 30주선 우상향&#10;&#10;이탈: 위 조건 미충족">신호</th>
+          <th onclick="sort('ma10_align_weeks')" data-tip="10주선 &gt; 20주선 &gt; 30주선이 연속 유지된 주수&#10;(5주선 제외 — 5주선은 가끔 10주선 아래로 이탈)">전체 정배열 기간</th>
+          <th data-tip="최초정배열: 이번 주 처음으로 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선 진입">신호</th>
           <th data-tip="전체 정배열: 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선&#10;정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
         </tr>
       </thead>
@@ -214,7 +216,7 @@ th[data-tip]:hover::after { opacity: 1; }
 </div>
 
 <script>
-let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'chg', sortDir = -1, activeSector = 'all';
+let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'ma10_align_weeks', sortDir = -1, activeSector = 'all';
 
 fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
@@ -244,7 +246,7 @@ function setMarket(v, el) {
 }
 function setSignal(v, el) {
   filterSignal = filterSignal === v ? 'all' : v;
-  document.querySelectorAll('#btn-strong,#btn-watch,#btn-first,#btn-align').forEach(b => b.classList.remove('active-signal'));
+  document.querySelectorAll('#btn-firstfa,#btn-first,#btn-align').forEach(b => b.classList.remove('active-signal'));
   if (filterSignal !== 'all') el.classList.add('active-signal');
   render();
 }
@@ -382,14 +384,22 @@ function getBadges(d) {
   return { sig: sig[d.signal], aln };
 }
 
+function fmtPeak(gap, date) {
+  if (gap == null) return '<span style="color:#ccc">—</span>';
+  const c = gap >= 0 ? '#1D9E75' : '#E24B4A';
+  return `<span style="color:${c};font-weight:500">${gap >= 0 ? '+' : ''}${gap}%</span><br><span style="font-size:10px;color:#aaa">${date}</span>`;
+}
+function alignWeeksBadge(w) {
+  if (!w) return '<span style="color:#ccc">—</span>';
+  return `<span class="badge weeks">${w}주째</span>`;
+}
+
 // ── 테이블 행 ───────────────────────────────────
 function rowHtml(d) {
   const gc  = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
-  const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
-  const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
-  const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
-  const { sig, aln } = getBadges(d);
+  const { aln } = getBadges(d);
   const chart = chartSvg(d.candles, d.ma5_line||[], d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 150, 70, d.vol_line);
+  const firstFASig = d.first_full_align ? '<span class="badge align">최초정배열</span>' : '<span style="color:#ccc">—</span>';
   return `<tr>
     <td><div style="font-weight:500">${d.name}</div><div style="font-size:11px;color:#aaa;margin-top:2px"><span class="${d.market==='KOSPI'?'kospi':'kosdaq'}" style="margin-right:4px">${d.market}</span><span class="sector-tag">${d.sector||'기타'}</span></div></td>
     <td style="font-weight:500">${d.price.toLocaleString()}원</td>
@@ -398,14 +408,17 @@ function rowHtml(d) {
     <td style="color:${gc};font-weight:500">${d.chg>=0?'+':''}${d.chg}%</td>
     <td>${fmtGap(d.ma5gap)}</td>
     <td>${fmtGap(d.ma10gap)}</td>
-    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div><span style="font-size:12px;color:${vc};margin-left:2px">${d.vol}x</span></div></td>
+    <td style="text-align:center">${fmtPeak(d.cur_peak_gap, d.cur_peak_date)}</td>
+    <td style="text-align:center">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</td>
+    <td style="text-align:center">${fmtGap(d.align_avg50)}</td>
     <td style="padding-top:6px;padding-bottom:6px">
       ${chart || '<span style="color:#ccc">—</span>'}
       ${chart ? `<div class="chart-legend"><span><span class="legend-dot" style="background:#E24B4A"></span>5주</span><span><span class="legend-dot" style="background:#F5A623"></span>10주</span><span><span class="legend-dot" style="background:#9B59B6"></span>20주</span><span><span class="legend-dot" style="background:#3498DB"></span>30주</span></div>` : ''}
     </td>
     <td>${breakBadge(d.above_ma10_weeks)}</td>
     <td>${breakBadge(d.above_ma30_weeks)}</td>
-    <td>${sig}</td>
+    <td>${alignWeeksBadge(d.ma10_align_weeks)}</td>
+    <td>${firstFASig}</td>
     <td>${aln||'<span style="color:#ccc">—</span>'}</td>
   </tr>`;
 }
@@ -413,15 +426,13 @@ function rowHtml(d) {
 // ── 모바일 카드 ─────────────────────────────────
 function cardHtml(d) {
   const gc  = d.chg >= 0 ? '#1D9E75' : '#E24B4A';
-  const gapc = d.ma30gap >= 0 ? '#1D9E75' : '#E24B4A';
-  const vc  = d.vol >= 2 ? '#1D9E75' : d.vol >= 1 ? '#BA7517' : '#E24B4A';
-  const vw  = Math.min(100, Math.round((d.vol / 5) * 100));
-  const { sig, aln } = getBadges(d);
+  const { aln } = getBadges(d);
   const chart = chartSvg(d.candles, d.ma5_line||[], d.ma10_line||[], d.ma20_line||[], d.ma30_line||[], 340, 140, d.vol_line);
+  const firstFASig = d.first_full_align ? '<span class="badge align">최초정배열</span>' : '';
   return `<div class="card">
     <div class="card-header">
       <div><div class="card-name">${d.name}</div><div class="card-code">${d.code}</div></div>
-      <div class="card-badges">${sig}</div>
+      <div class="card-badges">${firstFASig}</div>
     </div>
     <div class="card-meta">
       <span class="${d.market==='KOSPI'?'kospi':'kosdaq'}">${d.market}</span>
@@ -436,6 +447,10 @@ function cardHtml(d) {
       <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
       <div><div class="card-item-label">5주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma5gap)}</div></div>
       <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
+      <div><div class="card-item-label">현재 최고 괴리율</div><div class="card-item-val">${fmtPeak(d.cur_peak_gap, d.cur_peak_date)}</div></div>
+      <div><div class="card-item-label">직전 최고 괴리율</div><div class="card-item-val">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</div></div>
+      <div><div class="card-item-label">정배열 평균(50%)</div><div class="card-item-val">${fmtGap(d.align_avg50)}</div></div>
+      <div><div class="card-item-label">정배열 기간</div><div class="card-item-val">${alignWeeksBadge(d.ma10_align_weeks)}</div></div>
     </div>
     ${chart ? `<div class="card-chart">${chart}</div>
     <div class="card-chart-legend">
@@ -449,11 +464,6 @@ function cardHtml(d) {
         <span class="card-break-item"><span class="card-break-label">10주선</span>${breakBadge(d.above_ma10_weeks)}</span>
         <span class="card-break-item"><span class="card-break-label">30주선</span>${breakBadge(d.above_ma30_weeks)}</span>
       </div>
-      <div class="bar-wrap" style="width:120px">
-        <span style="font-size:11px;color:#aaa;margin-right:4px">거래량</span>
-        <div class="bar-bg"><div class="bar-fill" style="width:${vw}%;background:${vc}"></div></div>
-        <span style="font-size:12px;color:${vc};margin-left:4px">${d.vol}x</span>
-      </div>
     </div>
   </div>`;
 }
@@ -463,10 +473,9 @@ function render() {
   const q = document.getElementById('search').value.toLowerCase();
   let rows = data.filter(d => {
     if (filterMarket !== 'all' && d.market !== filterMarket) return false;
-    if (filterSignal === 'strong' && d.signal !== 'strong') return false;
-    if (filterSignal === 'watch'  && d.signal !== 'watch')  return false;
-    if (filterSignal === 'first'  && d.above_ma30_weeks !== 1) return false;
-    if (filterSignal === 'align'  && !d.full_align) return false;
+    if (filterSignal === 'firstfa' && !d.first_full_align) return false;
+    if (filterSignal === 'first'   && d.above_ma30_weeks !== 1) return false;
+    if (filterSignal === 'align'   && !d.full_align) return false;
     if (activeSector !== 'all' && d.sector !== activeSector) return false;
     if (q && !d.name.toLowerCase().includes(q) && !d.code.includes(q)) return false;
     return true;
@@ -480,21 +489,19 @@ function render() {
     return typeof av === 'string' ? av.localeCompare(bv) * sortDir : (av - bv) * sortDir;
   });
 
-  const strong     = data.filter(d => d.signal === 'strong').length;
-  const watch      = data.filter(d => d.signal === 'watch').length;
-  const firstBreak = data.filter(d => d.above_ma30_weeks === 1).length;
-  const alignCount = data.filter(d => d.full_align).length;
+  const firstFullAlign = data.filter(d => d.first_full_align).length;
+  const firstBreak     = data.filter(d => d.above_ma30_weeks === 1).length;
+  const alignCount     = data.filter(d => d.full_align).length;
 
   document.getElementById('stats').innerHTML = `
     <div class="stat"><div class="stat-label">전체 종목</div><div class="stat-val">${data.length}</div></div>
-    <div class="stat"><div class="stat-label">강한돌파</div><div class="stat-val green">${strong}</div></div>
-    <div class="stat"><div class="stat-label">관찰중</div><div class="stat-val amber">${watch}</div></div>
+    <div class="stat"><div class="stat-label">최초정배열</div><div class="stat-val" style="color:#0D6B4E">${firstFullAlign}</div></div>
     <div class="stat"><div class="stat-label">최초돌파 (30주)</div><div class="stat-val purple">${firstBreak}</div></div>
     <div class="stat"><div class="stat-label">전체 정배열</div><div class="stat-val" style="color:#0D6B4E">${alignCount}</div></div>
   `;
   document.getElementById('count').textContent = `${rows.length}개 종목 표시 중`;
 
-  const emptyRow  = '<tr><td colspan="13" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
+  const emptyRow  = '<tr><td colspan="16" class="empty">조건에 맞는 종목이 없습니다</td></tr>';
   const emptyCard = '<div style="text-align:center;color:#aaa;padding:40px">조건에 맞는 종목이 없습니다</div>';
 
   if (!rows.length) {
@@ -508,7 +515,7 @@ function render() {
     rows.forEach(d => { const sec = d.sector || '기타'; if (!grouped[sec]) grouped[sec] = []; grouped[sec].push(d); });
     const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
     document.getElementById('tbody').innerHTML = sorted.map(([sec, stocks]) =>
-      `<tr class="sector-group-row"><td colspan="13">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
+      `<tr class="sector-group-row"><td colspan="16">📂 ${sec} <span style="color:#aaa;font-weight:400">${stocks.length}개</span></td></tr>` +
       stocks.map(rowHtml).join('')
     ).join('');
     document.getElementById('cardList').innerHTML = sorted.map(([sec, stocks]) =>

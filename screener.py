@@ -29,7 +29,7 @@ for listing_df in [kospi_listing, kosdaq_listing]:
                 shares_map[r['Code']] = int(r['Stocks'])
 
 end = datetime.today()
-start = end - timedelta(days=700)
+start = end - timedelta(days=800)
 results = []
 
 for i, row in stocks.iterrows():
@@ -70,8 +70,8 @@ for i, row in stocks.iterrows():
         day_prev  = float(df['Close'].iloc[-2])
         day_chg   = round((day_close - day_prev) / day_prev * 100, 1) if day_prev else 0.0
 
-        ma5gap  = round((price - ma5_val)  / ma5_val  * 100, 1) if ma5_val  != 0 else 0.0
-        ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
+        ma5gap  = round((ma5_val  - price) / price * 100, 1) if price != 0 else 0.0
+        ma10gap = round((ma10_val - price) / price * 100, 1) if not pd.isna(ma10_val) and price != 0 else 0.0
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
         prev_price = float(weekly.iloc[-2])
         chg      = round((price - prev_price) / prev_price * 100, 1)
@@ -86,6 +86,7 @@ for i, row in stocks.iterrows():
         # 30주선 연속 돌파 주수
         prices_arr = weekly.values
         ma10_arr   = ma10.values
+        ma20_arr   = ma20.values
         ma30_arr   = ma30.values
 
         above_ma30_weeks = 0
@@ -100,6 +101,16 @@ for i, row in stocks.iterrows():
         for idx in range(len(prices_arr) - 1, -1, -1):
             if not pd.isna(ma10_arr[idx]) and prices_arr[idx] > ma10_arr[idx]:
                 above_ma10_weeks += 1
+            else:
+                break
+
+        # MA10>MA20>MA30 연속 유지 주수 (전체 정배열 기간, 5주선 제외)
+        ma10_align_weeks = 0
+        for idx in range(len(prices_arr) - 1, -1, -1):
+            m10 = ma10_arr[idx]; m20 = ma20_arr[idx]; m30 = ma30_arr[idx]
+            if (not pd.isna(m10) and not pd.isna(m20) and not pd.isna(m30) and
+                    m10 > 0 and m20 > 0 and m30 > 0 and m10 > m20 > m30):
+                ma10_align_weeks += 1
             else:
                 break
 
@@ -123,6 +134,61 @@ for i, row in stocks.iterrows():
 
         shares = shares_map.get(code, 0)
         market_cap = int(price * shares) if shares else 0
+
+        # 최초정배열: 직전 주는 full_align 아님 → 이번 주 처음 진입
+        prev_ma5_val  = float(ma5.iloc[-2])  if len(ma5)  >= 2 and not pd.isna(ma5.iloc[-2])  else 0.0
+        prev_ma10_val = float(ma10.iloc[-2]) if len(ma10) >= 2 and not pd.isna(ma10.iloc[-2]) else 0.0
+        prev_ma20_val = float(ma20.iloc[-2]) if len(ma20) >= 2 and not pd.isna(ma20.iloc[-2]) else 0.0
+        prev_ma30_val = float(ma30.iloc[-2]) if len(ma30) >= 2 and not pd.isna(ma30.iloc[-2]) else 0.0
+        prev_full_align = (
+            prev_ma5_val > 0 and prev_ma10_val > 0 and prev_ma20_val > 0 and prev_ma30_val > 0 and
+            prev_price > prev_ma5_val > prev_ma10_val > prev_ma20_val > prev_ma30_val
+        )
+        first_full_align = bool(full_align and not prev_full_align)
+
+        # 2년 정배열 사이클 분석 (MTS 방식 10주선 괴리율)
+        N = min(104, len(weekly))
+        recent_w = weekly.iloc[-N:]
+        ma5_r  = ma5.iloc[-N:];  ma10_r = ma10.iloc[-N:]
+        ma20_r = ma20.iloc[-N:]; ma30_r = ma30.iloc[-N:]
+
+        align_data = []
+        for dt, w, m5, m10v, m20v, m30v in zip(
+            recent_w.index, recent_w.values,
+            ma5_r.values, ma10_r.values, ma20_r.values, ma30_r.values
+        ):
+            if any(pd.isna(v) or v == 0 for v in [m5, m10v, m20v, m30v]):
+                align_data.append((dt, None, False)); continue
+            w, m5, m10v, m20v, m30v = float(w), float(m5), float(m10v), float(m20v), float(m30v)
+            is_aln = w > m5 > m10v > m20v > m30v
+            g = round((m10v - w) / w * 100, 1) if is_aln and w > 0 else None
+            align_data.append((dt, g, is_aln))
+
+        cycles = []; cur_c = []
+        for dt, g, is_aln in align_data:
+            if is_aln:
+                cur_c.append((dt, g))
+            elif cur_c:
+                cycles.append(cur_c); cur_c = []
+        if cur_c:
+            cycles.append(cur_c)
+
+        def cycle_peak(cyc):
+            if not cyc: return None, None
+            best = min(cyc, key=lambda x: x[1])
+            return best[1], best[0].strftime('%y/%m/%d')
+
+        all_align_gaps = [g for cyc in cycles for _, g in cyc]
+        sorted_ag = sorted(all_align_gaps)
+        top50 = sorted_ag[:len(sorted_ag)//2] if sorted_ag else []
+        align_avg50 = round(sum(top50) / len(top50), 1) if top50 else None
+
+        if full_align and cycles:
+            cur_peak_gap, cur_peak_date = cycle_peak(cycles[-1])
+            prev_peak_gap, prev_peak_date = cycle_peak(cycles[-2]) if len(cycles) >= 2 else (None, None)
+        else:
+            cur_peak_gap, cur_peak_date = None, None
+            prev_peak_gap, prev_peak_date = cycle_peak(cycles[-1]) if cycles else (None, None)
 
         if gap > 3 and chg > 2 and vol_ratio > 1.5 and ma30_slope > 0:
             signal = 'strong'
@@ -150,6 +216,13 @@ for i, row in stocks.iterrows():
             'ma30_slope': ma30_slope,
             'signal': signal,
             'full_align': full_align,
+            'first_full_align': first_full_align,
+            'ma10_align_weeks': ma10_align_weeks,
+            'cur_peak_gap': cur_peak_gap,
+            'cur_peak_date': cur_peak_date,
+            'prev_peak_gap': prev_peak_gap,
+            'prev_peak_date': prev_peak_date,
+            'align_avg50': align_avg50,
             'above_ma10_weeks': above_ma10_weeks,
             'above_ma30_weeks': above_ma30_weeks,
             'candles': candles,
