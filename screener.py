@@ -70,8 +70,8 @@ for i, row in stocks.iterrows():
         day_prev  = float(df['Close'].iloc[-2])
         day_chg   = round((day_close - day_prev) / day_prev * 100, 1) if day_prev else 0.0
 
-        ma5gap  = round((ma5_val  - price) / price * 100, 1) if price != 0 else 0.0
-        ma10gap = round((ma10_val - price) / price * 100, 1) if not pd.isna(ma10_val) and price != 0 else 0.0
+        ma5gap  = round((price - ma5_val)  / ma5_val  * 100, 1) if ma5_val  != 0 else 0.0
+        ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
         prev_price = float(weekly.iloc[-2])
         chg      = round((price - prev_price) / prev_price * 100, 1)
@@ -161,7 +161,7 @@ for i, row in stocks.iterrows():
                 align_data.append((dt, None, False)); continue
             w, m5, m10v, m20v, m30v = float(w), float(m5), float(m10v), float(m20v), float(m30v)
             is_aln = w > m5 > m10v > m20v > m30v
-            g = round((m10v - w) / w * 100, 1) if is_aln and w > 0 else None
+            g = round((w - m10v) / m10v * 100, 1) if is_aln and m10v > 0 else None
             align_data.append((dt, g, is_aln))
 
         cycles = []; cur_c = []
@@ -175,20 +175,27 @@ for i, row in stocks.iterrows():
 
         def cycle_peak(cyc):
             if not cyc: return None, None
-            best = min(cyc, key=lambda x: x[1])
+            best = max(cyc, key=lambda x: x[1])
             return best[1], best[0].strftime('%y/%m/%d')
 
         all_align_gaps = [g for cyc in cycles for _, g in cyc]
-        sorted_ag = sorted(all_align_gaps)
+        sorted_ag = sorted(all_align_gaps, reverse=True)
         top50 = sorted_ag[:len(sorted_ag)//2] if sorted_ag else []
         align_avg50 = round(sum(top50) / len(top50), 1) if top50 else None
 
         if full_align and cycles:
             cur_peak_gap, cur_peak_date = cycle_peak(cycles[-1])
-            prev_peak_gap, prev_peak_date = cycle_peak(cycles[-2]) if len(cycles) >= 2 else (None, None)
         else:
             cur_peak_gap, cur_peak_date = None, None
-            prev_peak_gap, prev_peak_date = cycle_peak(cycles[-1]) if cycles else (None, None)
+
+        # B방식: 2년 내 모든 사이클 통틀어 최고 괴리율 (현재 사이클 제외)
+        past_cycles = cycles[:-1] if (full_align and cycles) else cycles
+        past_gaps = [(dt, g) for cyc in past_cycles for dt, g in cyc]
+        if past_gaps:
+            best = max(past_gaps, key=lambda x: x[1])
+            prev_peak_gap, prev_peak_date = best[1], best[0].strftime('%y/%m/%d')
+        else:
+            prev_peak_gap, prev_peak_date = None, None
 
         if gap > 3 and chg > 2 and vol_ratio > 1.5 and ma30_slope > 0:
             signal = 'strong'

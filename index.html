@@ -191,16 +191,16 @@ th[data-tip]:hover::after { opacity: 1; }
         <tr>
           <th onclick="sort('name')">종목</th>
           <th onclick="sort('price')">현재가</th>
-          <th onclick="sort('market_cap')">시가총액</th>
-          <th onclick="sort('day_chg')">일간등락</th>
-          <th onclick="sort('chg')">주간등락</th>
-          <th onclick="sort('ma5gap')">5주선 괴리율</th>
-          <th onclick="sort('ma10gap')">10주선 괴리율</th>
-          <th onclick="sort('prev_peak_gap')" data-tip="직전 정배열 사이클의 최고 과열 주&#10;(MTS 방식: 음수 = 과열)">직전 최고 괴리율</th>
-          <th onclick="sort('align_avg50')" data-tip="2년 내 전체 정배열 구간 괴리율 상위 50% 평균&#10;종목별 자동 보정 — 기준값으로 현재 과열 판단">정배열 평균(50%)</th>
-          <th>6개월 차트</th>
-          <th onclick="sort('above_ma10_weeks')" data-tip="10주선을 돌파한 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주선 돌파</th>
-          <th onclick="sort('ma10_align_weeks')" data-tip="10주선 &gt; 20주선 &gt; 30주선이 연속 유지된 주수&#10;(5주선 제외 — 5주선은 가끔 10주선 아래로 이탈)">정배열 기간</th>
+          <th onclick="sort('market_cap')" data-tip="종가 × 발행주식수 기준 시가총액">시총</th>
+          <th onclick="sort('day_chg')" data-tip="전일 대비 일간 등락률">일간</th>
+          <th onclick="sort('chg')" data-tip="직전 주봉 대비 주간 등락률">주간</th>
+          <th onclick="sort('ma5gap')" data-tip="(현재가 - 5주 이평선) / 5주 이평선 × 100&#10;양수 = 이평선 위, 음수 = 이평선 아래">5주 괴리율</th>
+          <th onclick="sort('ma10gap')" data-tip="(현재가 - 10주 이평선) / 10주 이평선 × 100&#10;양수 = 이평선 위, 음수 = 이평선 아래">10주 괴리율</th>
+          <th onclick="sort('prev_peak_gap')" data-tip="2년 내 전체 정배열 구간 중 10주 괴리율이 가장 높았던 주&#10;(현재 사이클 제외 — 과거 최고 과열 기준점)">최고 괴리율</th>
+          <th onclick="sort('align_avg50')" data-tip="2년 내 정배열 구간 괴리율 상위 50% 평균&#10;종목별 자동 보정 — 현재 과열 수준 판단 기준">정배열 평균</th>
+          <th data-tip="최근 6개월 주봉 캔들차트">차트</th>
+          <th onclick="sort('above_ma10_weeks')" data-tip="주가가 10주 이평선 위로 올라온 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주 돌파</th>
+          <th onclick="sort('ma10_align_weeks')" data-tip="10주선 &gt; 20주선 &gt; 30주선 순서가 연속 유지된 주수&#10;(5주선 제외 — 5주선은 가끔 10주선 아래로 이탈함)">정배열</th>
           <th data-tip="최초정배열: 이번 주 처음으로 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선 진입">신호</th>
           <th data-tip="전체 정배열: 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선&#10;정배열: 10주선 &gt; 30주선&#10;역배열: 10주선 &lt; 30주선">배열</th>
         </tr>
@@ -443,8 +443,8 @@ function cardHtml(d) {
       <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
       <div><div class="card-item-label">5주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma5gap)}</div></div>
       <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
-      <div><div class="card-item-label">직전 최고 괴리율</div><div class="card-item-val">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</div></div>
-      <div><div class="card-item-label">정배열 평균(50%)</div><div class="card-item-val">${fmtGap(d.align_avg50)}</div></div>
+      <div><div class="card-item-label">2년 최고 괴리율</div><div class="card-item-val">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</div></div>
+      <div><div class="card-item-label">정배열 평균</div><div class="card-item-val">${fmtGap(d.align_avg50)}</div></div>
       <div><div class="card-item-label">정배열 기간</div><div class="card-item-val">${alignWeeksBadge(d.ma10_align_weeks)}</div></div>
     </div>
     ${chart ? `<div class="card-chart">${chart}</div>
