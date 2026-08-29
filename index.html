@@ -56,7 +56,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; }
 .empty { padding: 40px; text-align: center; color: #aaa; }
 
 /* Badges */
-.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 500; white-space: nowrap; }
 .badge.strong { background: #EAF3DE; color: #3B6D11; }
 .badge.watch  { background: #FAEEDA; color: #854F0B; }
 .badge.weak   { background: #FCEBEB; color: #A32D2D; }
@@ -122,7 +122,12 @@ th[data-tip]:hover::after { opacity: 1; }
 .card-break-label { color: #aaa; margin-right: 3px; }
 .card-sector-header { font-size: 12px; font-weight: 600; color: #555; background: #f7f6f3; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; margin-top: 4px; }
 
+/* Mobile sort — hidden on desktop */
+.mobile-sort-group { display: none; }
+.mobile-sort-group select { font-size: 12px; padding: 5px 10px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; color: #555; outline: none; }
+
 @media (max-width: 768px) {
+  .mobile-sort-group { display: flex; }
   .wrap { padding: 16px 12px; }
   h1 { font-size: 17px; margin-bottom: 14px; }
   .stats { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
@@ -173,6 +178,19 @@ th[data-tip]:hover::after { opacity: 1; }
         <button class="btn" id="btn-first"   onclick="setSignal('first',this)">최초돌파</button>
         <button class="btn" id="btn-align"   onclick="setSignal('align',this)">전체 정배열</button>
       </div>
+      <div class="filter-group mobile-sort-group">
+        <span class="filter-label">정렬</span>
+        <select id="mobileSort" onchange="setMobileSort(this.value)">
+          <option value="market_cap">시가총액</option>
+          <option value="chg">주간등락</option>
+          <option value="day_chg">일간등락</option>
+          <option value="ma10gap">10주 괴리율</option>
+          <option value="ma10_align_weeks">정배열 기간</option>
+          <option value="above_ma10_weeks">10주 돌파</option>
+          <option value="prev_peak_gap">최고 괴리율</option>
+          <option value="align_avg50">정배열 평균</option>
+        </select>
+      </div>
     </div>
     <input class="search" type="text" placeholder="종목명 검색..." oninput="render()" id="search">
   </div>
@@ -214,7 +232,7 @@ th[data-tip]:hover::after { opacity: 1; }
 </div>
 
 <script>
-let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'ma10_align_weeks', sortDir = -1, activeSector = 'all';
+let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'market_cap', sortDir = -1, activeSector = 'all';
 
 fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
@@ -242,6 +260,12 @@ function setMarket(v, el) {
   if (filterMarket !== 'all') el.classList.add('active-market');
   render();
 }
+function setMobileSort(key) {
+  sortKey = key;
+  sortDir = -1;
+  render();
+}
+
 function setSignal(v, el) {
   filterSignal = filterSignal === v ? 'all' : v;
   document.querySelectorAll('#btn-firstfa,#btn-first,#btn-align').forEach(b => b.classList.remove('active-signal'));
