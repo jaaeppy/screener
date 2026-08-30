@@ -231,8 +231,8 @@ def run_alert():
     # 1. 보유/관심종목 알림 — 매 회 공통
     run_watchlist_alert(screener_map, now_str, title_suffix)
 
-    # 2. 최초정배열 알림 — 15:30 장마감 회차만
-    if is_closed:
+    # 2. 최초정배열 알림 — 금요일 15:30 장마감 회차만
+    if is_closed and now.weekday() == 4:
         run_first_align_alert(screener_map, now_str)
 
 
