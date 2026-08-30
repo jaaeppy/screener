@@ -188,11 +188,11 @@ for i, row in stocks.iterrows():
         else:
             cur_peak_gap, cur_peak_date = None, None
 
-        # B방식: 2년 내 모든 사이클 통틀어 최고 괴리율 (현재 사이클 제외)
-        past_cycles = cycles[:-1] if (full_align and cycles) else cycles
-        past_gaps = [(dt, g) for cyc in past_cycles for dt, g in cyc]
-        if past_gaps:
-            best = max(past_gaps, key=lambda x: x[1])
+        # 이번 주만 제외하고 2년 내 모든 정배열 주간 중 최고 괴리율
+        this_week = recent_w.index[-1]
+        past_align_weeks = [(dt, g) for dt, g, is_aln in align_data if is_aln and dt < this_week]
+        if past_align_weeks:
+            best = max(past_align_weeks, key=lambda x: x[1])
             prev_peak_gap, prev_peak_date = best[1], best[0].strftime('%y/%m/%d')
         else:
             prev_peak_gap, prev_peak_date = None, None
