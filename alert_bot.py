@@ -4,8 +4,8 @@ from datetime import datetime
 import os
 
 # ── 설정 ────────────────────────────────────────────────────────────────────
-TELEGRAM_TOKEN   = ""   # BotFather 토큰 (나중에 입력)
-TELEGRAM_CHAT_ID = ""   # chat_id (나중에 입력)
+TELEGRAM_TOKEN   = "8946065825:AAHTo_CBNcHHiRs2zGa6O60YsMth6o0xLrE"
+TELEGRAM_CHAT_ID = "348127299"
 
 SCREENER_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screener_result.json")
 WATCHLIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watchlist.json")
@@ -62,9 +62,9 @@ def heat_label(gap, avg, peak):
 
 def fmt_cap(v):
     if not v or v <= 0: return "—"
-    if v >= 1e12: return f"{v/1e12:.1f}조"
-    if v >= 1e8:  return f"{round(v/1e8)}억"
-    return f"{round(v/1e4)}만"
+    if v >= 1e12: return f"{v/1e12:,.1f}조"
+    if v >= 1e8:  return f"{round(v/1e8):,}억"
+    return f"{round(v/1e4):,}만"
 
 
 # ── 보유/관심종목 알림 ──────────────────────────────────────────────────────
@@ -95,8 +95,8 @@ def run_watchlist_alert(screener_map, now_str, title_suffix):
 
         current_price = get_current_price(code)
         if current_price is None:
-            rows.append({"tag": tag, "name": name, "price": None,
-                         "gap": None, "peak": prev_peak, "avg": avg50, "heat": None})
+            rows.append({"tag": tag, "name": name, "market": d.get("market",""), "cap": d.get("market_cap",0),
+                         "price": None, "gap": None, "peak": prev_peak, "avg": avg50, "heat": None})
             continue
 
         if not ma10 or ma10 == 0:
@@ -105,8 +105,8 @@ def run_watchlist_alert(screener_map, now_str, title_suffix):
         gap  = round((current_price - ma10) / ma10 * 100, 1)
         heat = heat_label(gap, avg50, prev_peak)
 
-        rows.append({"tag": tag, "name": name, "price": current_price,
-                     "gap": gap, "peak": prev_peak, "avg": avg50, "heat": heat})
+        rows.append({"tag": tag, "name": name, "market": d.get("market",""), "cap": d.get("market_cap",0),
+                     "price": current_price, "gap": gap, "peak": prev_peak, "avg": avg50, "heat": heat})
 
     if not rows:
         return
@@ -122,6 +122,7 @@ def run_watchlist_alert(screener_map, now_str, title_suffix):
         peak_str  = f"{r['peak']:+.1f}%" if r["peak"] is not None else "—"
         avg_str   = f"{r['avg']:+.1f}%"  if r["avg"]  is not None else "—"
         price_str = f"{r['price']:,}원"  if r["price"] else "—"
+        meta      = f"{r.get('market','')} · {fmt_cap(r.get('cap',0))}"
 
         if r["heat"] == "over":
             detail = f"역대최고 {peak_str} 돌파"
@@ -133,8 +134,9 @@ def run_watchlist_alert(screener_map, now_str, title_suffix):
             detail = "정배열 아님 / 기준 없음"
 
         if r["price"]:
-            return f"{r['name']}\n현재가 {price_str}  |  10주괴리율 {gap_str}\n{detail}"
-        return f"{r['name']}\n{detail}"
+            return (f"{r['name']} ({meta})\n"
+                    f"현재가 {price_str}  |  10주괴리율 {gap_str}\n{detail}")
+        return f"{r['name']} ({meta})\n{detail}"
 
     def fmt_section(rows_list):
         buckets = {"over": [], "warn": [], "up": [], None: []}
@@ -172,34 +174,39 @@ def run_first_align_alert(screener_map, now_str):
         if d.get("first_full_align")
         and d.get("market_cap", 0) >= 100_000_000_000
     ]
-    # 시총 내림차순
-    first_fa.sort(key=lambda x: -x.get("market_cap", 0))
 
     if not first_fa:
-        send_telegram(f"🌙 [{now_str} 장마감] 오늘 최초정배열 진입 종목 없음 (시총 1000억 이상 기준)")
+        send_telegram(f"🌙 [{now_str} 장마감] 오늘 최초정배열 진입 종목 없음 (시총 1,000억 이상 기준)")
         return
 
-    lines = [f"🌙 [{now_str} 장마감] 최초정배열 진입 종목  ({len(first_fa)}개)"]
-    lines.append("시총 1000억 이상 · 시총 내림차순\n")
+    kospi_list  = sorted([d for d in first_fa if d.get("market") == "KOSPI"],
+                         key=lambda x: -x.get("market_cap", 0))
+    kosdaq_list = sorted([d for d in first_fa if d.get("market") == "KOSDAQ"],
+                         key=lambda x: -x.get("market_cap", 0))
 
-    for d in first_fa:
-        gap_str  = f"{d['ma10gap']:+.1f}%"          if d.get("ma10gap")      is not None else "—"
-        peak_str = f"{d['prev_peak_gap']:+.1f}%"    if d.get("prev_peak_gap") is not None else "—"
-        avg_str  = f"{d['align_avg50']:+.1f}%"      if d.get("align_avg50")   is not None else "—"
+    def fmt_fa_row(d):
+        gap_str  = f"{d['ma10gap']:+.1f}%"       if d.get("ma10gap")       is not None else "—"
+        peak_str = f"{d['prev_peak_gap']:+.1f}%"  if d.get("prev_peak_gap") is not None else "—"
+        avg_str  = f"{d['align_avg50']:+.1f}%"    if d.get("align_avg50")   is not None else "—"
         cap_str  = fmt_cap(d.get("market_cap", 0))
-        mkt      = d.get("market", "")
-
-        # 과열 상태 표시
         heat = heat_label(d.get("ma10gap"), d.get("align_avg50"), d.get("prev_peak_gap"))
         if heat == "over":   heat_txt = "🔥과열"
         elif heat == "warn": heat_txt = "⚠️과열주의"
         elif heat == "up":   heat_txt = "📈상승중"
         else:                heat_txt = "➖"
+        return (f"{heat_txt}  {d['name']} ({cap_str})\n"
+                f"10주괴리율 {gap_str}  |  평균 {avg_str}  |  최고 {peak_str}")
 
-        lines.append(
-            f"{heat_txt}  {d['name']} ({mkt} · {cap_str})\n"
-            f"10주괴리율 {gap_str}  |  평균 {avg_str}  |  최고 {peak_str}"
-        )
+    lines = [f"🌙 [{now_str} 장마감] 최초정배열 진입 종목  ({len(first_fa)}개)\n"
+             f"시총 1,000억 이상\n"]
+
+    if kospi_list:
+        lines.append(f"📌 KOSPI ({len(kospi_list)}개)\n")
+        lines.extend(fmt_fa_row(d) for d in kospi_list)
+
+    if kosdaq_list:
+        lines.append(f"\n📌 KOSDAQ ({len(kosdaq_list)}개)\n")
+        lines.extend(fmt_fa_row(d) for d in kosdaq_list)
 
     send_telegram("\n\n".join(lines))
 
