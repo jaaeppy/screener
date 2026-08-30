@@ -142,6 +142,9 @@ tr.drag-over td { border-top: 2px solid #534AB7 !important; }
       <div class="page-title">보유종목 점검</div>
       <div class="page-sub">보유 종목과 관심 종목의 기술적 현황을 한눈에 확인</div>
     </div>
+    <button onclick="exportWatchlist()" style="padding:8px 16px;border-radius:8px;border:0.5px solid #ddd;background:#fff;font-size:12px;color:#555;cursor:pointer;display:flex;align-items:center;gap:6px" title="watchlist.json 다운로드 → screener 폴더에 저장하면 알림봇이 읽습니다">
+      📥 알림봇 동기화
+    </button>
   </div>
 
   <div class="add-area">
@@ -577,6 +580,19 @@ function initDrag(container) {
       render();
     });
   });
+}
+
+// Export watchlist.json for alert bot
+function exportWatchlist() {
+  const hold  = getList(HOLD_KEY);
+  const watch = getList(WATCH_KEY);
+  const json  = JSON.stringify({ hold, watch }, null, 2);
+  const blob  = new Blob([json], { type: 'application/json' });
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = 'watchlist.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // Load data
