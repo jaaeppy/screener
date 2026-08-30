@@ -178,6 +178,13 @@ th[data-tip]:hover::after { opacity: 1; }
         <button class="btn" id="btn-first"   onclick="setSignal('first',this)">최초돌파</button>
         <button class="btn" id="btn-align"   onclick="setSignal('align',this)">전체 정배열</button>
       </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <span class="filter-label">과열</span>
+        <button class="btn" id="btn-heat-up"   onclick="setHeat('up',this)">상승중</button>
+        <button class="btn" id="btn-heat-warn" onclick="setHeat('warn',this)">과열 주의</button>
+        <button class="btn" id="btn-heat-over" onclick="setHeat('over',this)">과열</button>
+      </div>
       <div class="filter-group mobile-sort-group">
         <span class="filter-label">정렬</span>
         <select id="mobileSort" onchange="setMobileSort(this.value)">
@@ -232,7 +239,7 @@ th[data-tip]:hover::after { opacity: 1; }
 </div>
 
 <script>
-let data = [], filterMarket = 'all', filterSignal = 'all', sortKey = 'market_cap', sortDir = -1, activeSector = 'all';
+let data = [], filterMarket = 'all', filterSignal = 'all', filterHeat = 'all', sortKey = 'market_cap', sortDir = -1, activeSector = 'all';
 
 fetch('screener_result.json?v=' + Date.now())
   .then(r => r.json())
@@ -260,6 +267,27 @@ function setMarket(v, el) {
   if (filterMarket !== 'all') el.classList.add('active-market');
   render();
 }
+function getHeatLevel(d) {
+  const g = d.ma10gap, avg = d.align_avg50, peak = d.prev_peak_gap;
+  if (!g || g <= 0 || !avg || !peak) return null;
+  if (g < avg)   return 'up';
+  if (g < peak)  return 'warn';
+  return 'over';
+}
+function heatBadge(d) {
+  const lvl = getHeatLevel(d);
+  if (!lvl) return '';
+  if (lvl === 'up')   return ' <span style="font-size:10px;font-weight:600;color:#1D9E75">상승중</span>';
+  if (lvl === 'warn') return ' <span style="font-size:10px;font-weight:600;color:#BA7517">과열 주의</span>';
+  return ' <span style="font-size:10px;font-weight:600;color:#E24B4A">과열</span>';
+}
+function setHeat(v, el) {
+  filterHeat = filterHeat === v ? 'all' : v;
+  document.querySelectorAll('#btn-heat-up,#btn-heat-warn,#btn-heat-over').forEach(b => b.classList.remove('active-signal'));
+  if (filterHeat !== 'all') el.classList.add('active-signal');
+  render();
+}
+
 function setMobileSort(key) {
   sortKey = key;
   sortDir = -1;
@@ -429,7 +457,7 @@ function rowHtml(d) {
     <td style="color:${d.day_chg>=0?'#1D9E75':'#E24B4A'};font-weight:500">${d.day_chg!=null?(d.day_chg>=0?'+':'')+d.day_chg+'%':'—'}</td>
     <td style="color:${gc};font-weight:500">${d.chg>=0?'+':''}${d.chg}%</td>
     <td>${fmtGap(d.ma5gap)}</td>
-    <td>${fmtGap(d.ma10gap)}</td>
+    <td style="white-space:nowrap">${fmtGap(d.ma10gap)}${heatBadge(d)}</td>
     <td style="text-align:center">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</td>
     <td style="text-align:center">${fmtGap(d.align_avg50)}</td>
     <td style="padding-top:6px;padding-bottom:6px">
@@ -466,7 +494,7 @@ function cardHtml(d) {
       <div><div class="card-item-label">일간등락</div><div class="card-item-val" style="color:${d.day_chg>=0?'#1D9E75':'#E24B4A'}">${d.day_chg!=null?(d.day_chg>=0?'+':'')+d.day_chg+'%':'—'}</div></div>
       <div><div class="card-item-label">주간등락</div><div class="card-item-val" style="color:${gc}">${d.chg>=0?'+':''}${d.chg}%</div></div>
       <div><div class="card-item-label">5주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma5gap)}</div></div>
-      <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val">${fmtGap(d.ma10gap)}</div></div>
+      <div><div class="card-item-label">10주선 괴리율</div><div class="card-item-val" style="white-space:nowrap">${fmtGap(d.ma10gap)}${heatBadge(d)}</div></div>
       <div><div class="card-item-label">2년 최고 괴리율</div><div class="card-item-val">${fmtPeak(d.prev_peak_gap, d.prev_peak_date)}</div></div>
       <div><div class="card-item-label">정배열 평균</div><div class="card-item-val">${fmtGap(d.align_avg50)}</div></div>
       <div><div class="card-item-label">정배열 기간</div><div class="card-item-val">${alignWeeksBadge(d.ma10_align_weeks)}</div></div>
@@ -495,6 +523,7 @@ function render() {
     if (filterSignal === 'firstfa' && !d.first_full_align) return false;
     if (filterSignal === 'first'   && d.above_ma30_weeks !== 1) return false;
     if (filterSignal === 'align'   && !d.full_align) return false;
+    if (filterHeat !== 'all' && getHeatLevel(d) !== filterHeat) return false;
     if (activeSector !== 'all' && d.sector !== activeSector) return false;
     if (q && !d.name.toLowerCase().includes(q) && !d.code.includes(q)) return false;
     return true;
