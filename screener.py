@@ -12,9 +12,37 @@ except:
     sector_map = {}
     print("  sector_map.json 없음 — 업종 정보 없이 진행")
 
+def get_listing_with_fallback(market):
+    """GitHub 캐시 404 시 최근 유효 날짜 파일로 재시도"""
+    import requests, io
+    from datetime import datetime, timedelta
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://data.krx.co.kr/contents/MDC/MDI/outerLoader/index.cmd'
+    }
+    base_url = 'https://raw.githubusercontent.com/FinanceData/fdr_krx_data_cache/refs/heads/master/data/listing/krx/{}.csv'
+    mkt_map = {'KOSPI': 'STK', 'KOSDAQ': 'KSQ'}
+    for days_back in range(10):
+        ds = (datetime.today() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+        r = requests.get(base_url.format(ds), headers=headers, timeout=10)
+        if r.status_code == 200:
+            print(f"  종목 목록 로드: {ds} (최신 캐시)")
+            df = pd.read_csv(io.StringIO(r.text), dtype={'Code': str, 'Dept': str, 'ChangeCode': str, 'MarketId': str})
+            df = df.reset_index(drop=True)
+            mkt = mkt_map.get(market)
+            if mkt:
+                df = df[df['MarketId'] == mkt].reset_index(drop=True)
+            return df
+    raise RuntimeError("KRX 종목 목록 캐시를 가져올 수 없음 (최근 10일 모두 404)")
+
 print("코스피/코스닥 종목 목록 가져오는 중...")
-kospi_listing  = fdr.StockListing('KOSPI')
-kosdaq_listing = fdr.StockListing('KOSDAQ')
+try:
+    kospi_listing  = fdr.StockListing('KOSPI')
+    kosdaq_listing = fdr.StockListing('KOSDAQ')
+except Exception as e:
+    print(f"  기본 방식 실패 ({e}), fallback 시도...")
+    kospi_listing  = get_listing_with_fallback('KOSPI')
+    kosdaq_listing = get_listing_with_fallback('KOSDAQ')
 
 kospi  = kospi_listing[['Code','Name']].copy();  kospi['market']  = 'KOSPI'
 kosdaq = kosdaq_listing[['Code','Name']].copy(); kosdaq['market'] = 'KOSDAQ'
