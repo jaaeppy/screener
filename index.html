@@ -193,6 +193,8 @@ th[data-tip]:hover::after { opacity: 1; }
           <option value="day_chg">일간등락</option>
           <option value="ma10gap">10주 괴리율</option>
           <option value="ma10_align_weeks">정배열 기간</option>
+          <option value="day_trading_value">거래대금</option>
+          <option value="day_vol_ratio20">거래대금 배율</option>
           <option value="above_ma10_weeks">10주 돌파</option>
           <option value="prev_peak_gap">최고 괴리율</option>
           <option value="align_avg50">정배열 평균</option>
@@ -224,6 +226,7 @@ th[data-tip]:hover::after { opacity: 1; }
           <th onclick="sort('prev_peak_gap')" data-tip="2년 내 전체 정배열 구간 중 10주 괴리율이 가장 높았던 주&#10;(현재 사이클 제외 — 과거 최고 과열 기준점)">최고 괴리율</th>
           <th onclick="sort('align_avg50')" data-tip="2년 내 정배열 구간 괴리율 상위 50% 평균&#10;종목별 자동 보정 — 현재 과열 수준 판단 기준">정배열 평균</th>
           <th data-tip="최근 6개월 주봉 캔들차트">차트</th>
+          <th onclick="sort('day_trading_value')" data-tip="당일 거래대금 (억원)&#10;/ 직전 20일 평균 거래대금 대비 배수">거래대금</th>
           <th onclick="sort('above_ma10_weeks')" data-tip="주가가 10주 이평선 위로 올라온 후 유지한 주수&#10;최초돌파: 이번 주 처음 10주선 위로 올라온 종목">10주 돌파</th>
           <th onclick="sort('ma10_align_weeks')" data-tip="10주선 &gt; 20주선 &gt; 30주선 순서가 연속 유지된 주수&#10;(5주선 제외 — 5주선은 가끔 10주선 아래로 이탈함)">정배열</th>
           <th data-tip="최초정배열: 이번 주 처음으로 주가 &gt; 5주선 &gt; 10주선 &gt; 20주선 &gt; 30주선 진입">신호</th>
@@ -318,6 +321,14 @@ function fmtCap(v) {
   if (v >= 1e12) return `<span style="font-weight:500">${(v/1e12).toFixed(1)}조</span>`;
   if (v >= 1e8)  return `<span style="font-weight:500">${Math.round(v/1e8).toLocaleString()}억</span>`;
   return `<span style="font-weight:500">${Math.round(v/1e4).toLocaleString()}만</span>`;
+}
+function fmtTradingValue(val, ratio) {
+  if (val == null || val <= 0) return '<span style="color:#ccc">—</span>';
+  const valStr = val >= 1000 ? `${(val/1000).toFixed(1)}천억` : `${val.toFixed(0)}억`;
+  if (ratio == null) return `<span style="font-weight:500">${valStr}</span>`;
+  const r = ratio.toFixed(1);
+  const color = ratio >= 3 ? '#E24B4A' : ratio >= 2 ? '#F5A623' : '#888';
+  return `<span style="font-weight:500">${valStr}</span><br><span style="font-size:11px;color:${color}">${r}배</span>`;
 }
 function fmtGap(v) {
   if (v == null || isNaN(v)) return '<span style="color:#ccc">—</span>';
@@ -464,6 +475,7 @@ function rowHtml(d) {
       ${chart || '<span style="color:#ccc">—</span>'}
       ${chart ? `<div class="chart-legend"><span><span class="legend-dot" style="background:#E24B4A"></span>5주</span><span><span class="legend-dot" style="background:#F5A623"></span>10주</span><span><span class="legend-dot" style="background:#9B59B6"></span>20주</span><span><span class="legend-dot" style="background:#3498DB"></span>30주</span></div>` : ''}
     </td>
+    <td style="text-align:right;white-space:nowrap">${fmtTradingValue(d.day_trading_value, d.day_vol_ratio20)}</td>
     <td>${breakBadge(d.above_ma10_weeks)}</td>
     <td>${alignWeeksBadge(d.ma10_align_weeks)}</td>
     <td>${firstFASig}</td>
