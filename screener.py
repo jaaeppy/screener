@@ -98,11 +98,6 @@ for i, row in stocks.iterrows():
         day_prev  = float(df['Close'].iloc[-2])
         day_chg   = round((day_close - day_prev) / day_prev * 100, 1) if day_prev else 0.0
 
-        day_volume = float(df['Volume'].iloc[-1])
-        day_trading_value = round(day_close * day_volume / 1e8, 1)  # 억원
-        avg_vol_20 = df['Volume'].iloc[-21:-1].mean()
-        day_vol_ratio20 = round(day_volume / avg_vol_20, 1) if avg_vol_20 > 0 else 1.0
-
         ma5gap  = round((price - ma5_val)  / ma5_val  * 100, 1) if ma5_val  != 0 else 0.0
         ma10gap = round((price - ma10_val) / ma10_val * 100, 1) if not pd.isna(ma10_val) and ma10_val != 0 else 0.0
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
@@ -253,8 +248,6 @@ for i, row in stocks.iterrows():
             'ma10gap': ma10gap,
             'ma30gap': gap,
             'vol': vol_ratio,
-            'day_trading_value': day_trading_value,
-            'day_vol_ratio20': day_vol_ratio20,
             'ma30_slope': ma30_slope,
             'signal': signal,
             'full_align': full_align,
