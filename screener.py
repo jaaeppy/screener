@@ -91,7 +91,7 @@ for i, row in stocks.iterrows():
 
         full_align = (
             ma5_val > 0 and ma10_val > 0 and ma20_val > 0 and ma30_val > 0 and
-            price > ma5_val > ma10_val > ma20_val > ma30_val
+            ma5_val > ma10_val > ma20_val > ma30_val
         )
 
         day_close = float(df['Close'].iloc[-1])
@@ -170,7 +170,7 @@ for i, row in stocks.iterrows():
         prev_ma30_val = float(ma30.iloc[-2]) if len(ma30) >= 2 and not pd.isna(ma30.iloc[-2]) else 0.0
         prev_full_align = (
             prev_ma5_val > 0 and prev_ma10_val > 0 and prev_ma20_val > 0 and prev_ma30_val > 0 and
-            prev_price > prev_ma5_val > prev_ma10_val > prev_ma20_val > prev_ma30_val
+            prev_ma5_val > prev_ma10_val > prev_ma20_val > prev_ma30_val
         )
         first_full_align = bool(full_align and not prev_full_align)
 
