@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>야수의 심장 — 시장 상대강도</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
+
+/* GNB */
+.gnb { background: #fff; border-bottom: 1px solid #ebebeb; position: sticky; top: 0; z-index: 200; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.gnb::-webkit-scrollbar { display: none; }
+.gnb-inner { max-width: 1400px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 0; height: 52px; min-width: max-content; }
+.gnb-logo { font-size: 16px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.5px; margin-right: 28px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+.gnb-logo span { color: #534AB7; }
+.gnb-nav { display: flex; align-items: center; height: 100%; gap: 2px; }
+.gnb-tab { font-size: 14px; color: #888; text-decoration: none; padding: 0 14px; height: 100%; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: color 0.15s; white-space: nowrap; flex-shrink: 0; }
+.gnb-tab:hover { color: #333; }
+.gnb-tab.active { color: #1a1a1a; font-weight: 600; border-bottom-color: #1a1a1a; }
+
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.green { color: #1D9E75; } .red { color: #E24B4A; }
+
+/* Summary cards */
+.summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.s-card { background: #fff; border-radius: 10px; padding: 16px; border: 0.5px solid #e5e5e5; }
+.s-card-label { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+.s-card-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 4px; }
+.s-card-val { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.s-card-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+/* Filters */
+.filter-area { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.filter-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.filter-label { font-size: 11px; color: #aaa; white-space: nowrap; }
+.filter-divider { width: 0.5px; height: 20px; background: #e0e0e0; align-self: center; }
+.btn { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ddd; background: #fff; cursor: pointer; color: #555; white-space: nowrap; }
+.btn:hover:not(.active-mkt):not(.active-dir):not(.active-align) { background: #f5f5f3; }
+.btn.active-mkt   { background: #E6F1FB; color: #185FA5; border-color: #85B7EB; }
+.btn.active-dir   { background: #EEEDFE; color: #534AB7; border-color: #AFA9EC; }
+.btn.active-align { background: #D4F0E6; color: #0D6B4E; border-color: #7ECDB3; }
+
+/* Search + sector row */
+.top-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.search { padding: 7px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 13px; width: 200px; outline: none; background: #fff; }
+.search:focus { border-color: #534AB7; }
+.sector-select { padding: 7px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 12px; background: #fff; color: #555; outline: none; cursor: pointer; }
+.sector-select:focus { border-color: #534AB7; }
+.count-label { font-size: 12px; color: #888; margin-left: auto; }
+
+/* Badges */
+.kospi  { background: #E6F1FB; color: #185FA5; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.kosdaq { background: #EEEDFE; color: #534AB7; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
+.sector-tag { background: #F1EFE8; color: #5F5E5A; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+.badge.align  { background: #D4F0E6; color: #0D6B4E; }
+.badge.first  { background: #FDE8F8; color: #8B1A7E; }
+
+/* Relative strength pill */
+.rel-pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; font-variant-numeric: tabular-nums; min-width: 64px; text-align: center; }
+.rel-up { background: #EBF8F2; color: #1D9E75; }
+.rel-dn { background: #FCEBEB; color: #E24B4A; }
+.rel-neu { background: #F0F0F0; color: #888; }
+
+/* Bar */
+.bar-wrap { display: flex; align-items: center; gap: 6px; }
+.bar-bg { width: 50px; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.bar-fill { height: 100%; border-radius: 2px; }
+
+/* Table */
+.table-wrap { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow-x: auto; }
+table { width: 100%; min-width: max-content; border-collapse: collapse; font-size: 13px; }
+th { padding: 10px 12px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; white-space: nowrap; background: #fafafa; user-select: none; }
+th:hover { color: #333; }
+th.sorted { color: #534AB7; }
+th .sort-arrow { font-size: 10px; opacity: .4; margin-left: 2px; }
+th.sorted .sort-arrow { opacity: 1; color: #534AB7; }
+td { padding: 8px 12px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.section-row td { background: #f7f6f3; font-size: 11px; font-weight: 600; color: #555; padding: 6px 12px; border-bottom: 0.5px solid #eee; border-top: 0.5px solid #eee; }
+.stock-name { font-size: 13px; font-weight: 600; }
+.stock-code { font-size: 11px; color: #aaa; margin-top: 1px; }
+
+.empty { padding: 48px; text-align: center; color: #aaa; font-size: 14px; }
+.updated-row { font-size: 11px; color: #aaa; margin-bottom: 14px; }
+
+/* Mobile */
+.card-list { display: none; }
+.card { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 14px; margin-bottom: 10px; }
+.card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.card-name { font-size: 15px; font-weight: 600; }
+.card-code { font-size: 11px; color: #aaa; margin-top: 2px; }
+.card-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.card-divider { height: 0.5px; background: #f0f0f0; margin: 10px 0; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.card-item-label { font-size: 11px; color: #aaa; margin-bottom: 3px; }
+.card-item-val { font-size: 14px; font-weight: 600; }
+
+@media (max-width: 768px) {
+  .wrap { padding: 16px 12px; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+  .s-card-val { font-size: 22px; }
+  .filter-divider { display: none; }
+  .filter-area { gap: 8px; margin-bottom: 12px; }
+  .search { width: 100%; }
+  .count-label { margin-left: 0; }
+  .table-wrap { display: none; }
+  .card-list { display: block; }
+}
+</style>
+</head>
+<body>
+<nav class="gnb">
+  <div class="gnb-inner">
+    <a class="gnb-logo" href="index.html">야수의 <span>심장</span></a>
+    <div class="gnb-nav">
+      <a class="gnb-tab" href="index.html">종목 스크리너</a>
+      <a class="gnb-tab" href="sector.html">섹터 대시보드</a>
+      <a class="gnb-tab" href="portfolio.html">보유종목 점검</a>
+      <a class="gnb-tab active" href="relative.html">시장 상대강도</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px">
+    <h1 style="font-size:20px;font-weight:500">시장 상대강도</h1>
+    <span class="updated-row" id="updated-label"></span>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-cards">
+    <div class="s-card">
+      <div class="s-card-label">KOSPI 주간</div>
+      <div class="s-card-title" style="color:#185FA5">코스피</div>
+      <div class="s-card-val" id="kospi-chg-val">—</div>
+      <div class="s-card-sub" id="kospi-chg-sub"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-card-label">KOSDAQ 주간</div>
+      <div class="s-card-title" style="color:#534AB7">코스닥</div>
+      <div class="s-card-val" id="kosdaq-chg-val">—</div>
+      <div class="s-card-sub" id="kosdaq-chg-sub"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-card-label">시장 대비 강세</div>
+      <div class="s-card-title" style="color:#1D9E75">상대 강세 종목</div>
+      <div class="s-card-val green" id="strong-count">—</div>
+      <div class="s-card-sub" id="strong-avg"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-card-label">시장 대비 약세</div>
+      <div class="s-card-title" style="color:#E24B4A">상대 약세 종목</div>
+      <div class="s-card-val red" id="weak-count">—</div>
+      <div class="s-card-sub" id="weak-avg"></div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-area">
+    <div class="filter-group">
+      <span class="filter-label">시장</span>
+      <button class="btn active-mkt" data-group="mkt" data-val="전체">전체</button>
+      <button class="btn" data-group="mkt" data-val="KOSPI">코스피</button>
+      <button class="btn" data-group="mkt" data-val="KOSDAQ">코스닥</button>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span class="filter-label">방향</span>
+      <button class="btn active-dir" data-group="dir" data-val="전체">전체</button>
+      <button class="btn" data-group="dir" data-val="강세">강세만</button>
+      <button class="btn" data-group="dir" data-val="약세">약세만</button>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span class="filter-label">정배열</span>
+      <button class="btn active-align" data-group="align" data-val="전체">전체</button>
+      <button class="btn" data-group="align" data-val="정배열">정배열</button>
+      <button class="btn" data-group="align" data-val="전체정배열">전체정배열</button>
+    </div>
+  </div>
+
+  <div class="top-row">
+    <input class="search" id="search-input" type="text" placeholder="종목명 또는 코드 검색...">
+    <select class="sector-select" id="sector-select">
+      <option value="전체">업종 전체</option>
+    </select>
+    <span class="count-label" id="count-label"></span>
+  </div>
+
+  <!-- Desktop table -->
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th data-sort="name">종목 <span class="sort-arrow">↕</span></th>
+          <th data-sort="chg">주간 등락 <span class="sort-arrow">↕</span></th>
+          <th data-sort="market_chg">시장 등락 <span class="sort-arrow">↕</span></th>
+          <th data-sort="rel" class="sorted">상대강도 <span class="sort-arrow">▼</span></th>
+          <th data-sort="ma10gap">10주 괴리율 <span class="sort-arrow">↕</span></th>
+          <th data-sort="market_cap">시총 <span class="sort-arrow">↕</span></th>
+          <th>정배열</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="card-list" id="card-list"></div>
+</div>
+
+<script>
+let ALL = [];
+let sortCol = 'rel', sortDir = -1;
+let state = { mkt: '전체', dir: '전체', align: '전체', sector: '전체', q: '' };
+let kospiChg = 0, kosdaqChg = 0;
+
+function fmtChg(v) {
+  if (v == null) return '—';
+  const cls = v > 0 ? 'green' : v < 0 ? 'red' : '';
+  return `<span class="${cls}">${v > 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
+}
+function fmtRel(r) {
+  if (r == null) return '—';
+  const cls = r > 0 ? 'rel-up' : r < 0 ? 'rel-dn' : 'rel-neu';
+  const bar = Math.min(Math.abs(r) / 15 * 100, 100);
+  const col = r > 0 ? '#1D9E75' : '#E24B4A';
+  return `<div class="bar-wrap">
+    <span class="rel-pill ${cls}">${r > 0 ? '+' : ''}${r.toFixed(1)}%</span>
+    <div class="bar-bg"><div class="bar-fill" style="width:${bar}%;background:${col}"></div></div>
+  </div>`;
+}
+function fmtAlign(s) {
+  if (s.first_full_align) return '<span class="badge first">최초정배열</span>';
+  if (s.full_align)       return '<span class="badge align">전체정배열</span>';
+  return '—';
+}
+function fmtCap(v) {
+  if (!v) return '—';
+  if (v >= 1e12) return (v / 1e12).toFixed(1) + '조';
+  if (v >= 1e8)  return Math.round(v / 1e8) + '억';
+  return v.toLocaleString();
+}
+
+function filtered() {
+  return ALL.filter(s => {
+    if (state.mkt !== '전체' && s.market !== state.mkt) return false;
+    if (state.dir === '강세' && (s.rel ?? 0) <= 0) return false;
+    if (state.dir === '약세' && (s.rel ?? 0) >= 0) return false;
+    if (state.align === '정배열' && !s.full_align) return false;
+    if (state.align === '전체정배열' && !s.full_align) return false;
+    if (state.sector !== '전체' && s.sector !== state.sector) return false;
+    if (state.q) {
+      const q = state.q;
+      if (!s.name.includes(q) && !s.code.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function sorted(arr) {
+  return [...arr].sort((a, b) => {
+    let va = a[sortCol] ?? (sortCol === 'name' ? '' : -Infinity);
+    let vb = b[sortCol] ?? (sortCol === 'name' ? '' : -Infinity);
+    if (sortCol === 'name') return sortDir * va.localeCompare(vb, 'ko');
+    return sortDir * (va - vb);
+  });
+}
+
+function render() {
+  const rows = sorted(filtered());
+  const ups = rows.filter(s => (s.rel ?? 0) > 0);
+  const dns = rows.filter(s => (s.rel ?? 0) <= 0);
+
+  // summary
+  const strongAvg = ups.length ? (ups.reduce((a, s) => a + (s.rel ?? 0), 0) / ups.length).toFixed(1) : 0;
+  const weakAvg   = dns.length ? (dns.reduce((a, s) => a + (s.rel ?? 0), 0) / dns.length).toFixed(1) : 0;
+  document.getElementById('strong-count').textContent = ups.length + '개';
+  document.getElementById('strong-avg').textContent = ups.length ? `평균 상대강도 +${strongAvg}%` : '';
+  document.getElementById('weak-count').textContent = dns.length + '개';
+  document.getElementById('weak-avg').textContent = dns.length ? `평균 상대강도 ${weakAvg}%` : '';
+
+  document.getElementById('count-label').textContent = `${rows.length}개 종목`;
+
+  // table
+  let html = '';
+  if (ups.length && dns.length) {
+    html += `<tr class="section-row"><td colspan="7">▲ 시장 대비 강세 (${ups.length}개)</td></tr>`;
+    ups.forEach(s => { html += rowHtml(s); });
+    html += `<tr class="section-row"><td colspan="7">▼ 시장 대비 약세 (${dns.length}개)</td></tr>`;
+    dns.forEach(s => { html += rowHtml(s); });
+  } else {
+    rows.forEach(s => { html += rowHtml(s); });
+  }
+  if (!rows.length) html = '<tr><td colspan="7" class="empty">조건에 맞는 종목이 없습니다.</td></tr>';
+  document.getElementById('table-body').innerHTML = html;
+
+  // mobile cards
+  let cards = '';
+  if (ups.length && dns.length) {
+    if (ups.length) { cards += `<div class="card-sector-header">▲ 강세 ${ups.length}개</div>`; ups.forEach(s => { cards += cardHtml(s); }); }
+    if (dns.length) { cards += `<div class="card-sector-header" style="margin-top:12px">▼ 약세 ${dns.length}개</div>`; dns.forEach(s => { cards += cardHtml(s); }); }
+  } else {
+    rows.forEach(s => { cards += cardHtml(s); });
+  }
+  document.getElementById('card-list').innerHTML = cards || '<div class="empty">조건에 맞는 종목이 없습니다.</div>';
+}
+
+function rowHtml(s) {
+  return `<tr>
+    <td>
+      <div class="stock-name">${s.name}</div>
+      <div style="display:flex;gap:4px;margin-top:3px">
+        <span class="${s.market.toLowerCase()}">${s.market}</span>
+        <span class="sector-tag">${s.sector || ''}</span>
+      </div>
+    </td>
+    <td>${fmtChg(s.chg)}</td>
+    <td>${fmtChg(s.market_chg)}</td>
+    <td>${fmtRel(s.rel)}</td>
+    <td>${s.ma10gap != null ? `<span class="${s.ma10gap >= 0 ? 'green' : 'red'}">${s.ma10gap > 0 ? '+' : ''}${s.ma10gap.toFixed(1)}%</span>` : '—'}</td>
+    <td>${fmtCap(s.market_cap)}</td>
+    <td>${fmtAlign(s)}</td>
+  </tr>`;
+}
+
+function cardHtml(s) {
+  const relCls = (s.rel ?? 0) > 0 ? 'green' : 'red';
+  return `<div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-name">${s.name}</div>
+        <div class="card-code" style="display:flex;gap:4px;margin-top:3px">
+          <span class="${s.market.toLowerCase()}">${s.market}</span>
+          <span class="sector-tag">${s.sector || ''}</span>
+        </div>
+      </div>
+      <div style="text-align:right">${fmtAlign(s)}</div>
+    </div>
+    <div class="card-divider"></div>
+    <div class="card-grid">
+      <div>
+        <div class="card-item-label">주간 등락</div>
+        <div class="card-item-val">${s.chg != null ? `<span class="${(s.chg??0)>0?'green':'red'}">${(s.chg??0)>0?'+':''}${(s.chg??0).toFixed(1)}%</span>` : '—'}</div>
+      </div>
+      <div>
+        <div class="card-item-label">시장 등락</div>
+        <div class="card-item-val">${fmtChg(s.market_chg)}</div>
+      </div>
+      <div>
+        <div class="card-item-label">상대강도</div>
+        <div class="card-item-val"><span class="${relCls}">${(s.rel??0)>0?'+':''}${(s.rel??0).toFixed(1)}%</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('#main-table th[data-sort]').forEach(th => {
+    const col = th.dataset.sort;
+    const arrow = th.querySelector('.sort-arrow');
+    th.classList.toggle('sorted', col === sortCol);
+    if (arrow) arrow.textContent = col === sortCol ? (sortDir === -1 ? '▼' : '▲') : '↕';
+  });
+}
+
+function init() {
+  fetch('screener_result.json?_=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      const stocks = data.stocks || data;
+      kospiChg  = data.kospi_chg  ?? 0;
+      kosdaqChg = data.kosdaq_chg ?? 0;
+
+      // Backfill rel/market_chg if screener hasn't been rerun yet
+      ALL = stocks.map(s => ({
+        ...s,
+        market_chg: s.market_chg ?? (s.market === 'KOSPI' ? kospiChg : kosdaqChg),
+        rel: s.rel ?? parseFloat(((s.chg ?? 0) - (s.market === 'KOSPI' ? kospiChg : kosdaqChg)).toFixed(1))
+      }));
+
+      // Market summary
+      const kpEl = document.getElementById('kospi-chg-val');
+      kpEl.textContent = (kospiChg > 0 ? '+' : '') + kospiChg.toFixed(2) + '%';
+      kpEl.className = 's-card-val ' + (kospiChg > 0 ? 'green' : 'red');
+      document.getElementById('kospi-chg-sub').textContent = '직전 주 대비';
+
+      const kqEl = document.getElementById('kosdaq-chg-val');
+      kqEl.textContent = (kosdaqChg > 0 ? '+' : '') + kosdaqChg.toFixed(2) + '%';
+      kqEl.className = 's-card-val ' + (kosdaqChg > 0 ? 'green' : 'red');
+      document.getElementById('kosdaq-chg-sub').textContent = '직전 주 대비';
+
+      if (data.updated) {
+        document.getElementById('updated-label').textContent = '기준 ' + data.updated;
+      }
+
+      // Sector dropdown
+      const sects = ['전체', ...new Set(ALL.map(s => s.sector).filter(Boolean))].sort((a,b) => a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
+      const sel = document.getElementById('sector-select');
+      sects.forEach(sec => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = sec === '전체' ? '업종 전체' : sec;
+        opt.value = sec;
+        sel.appendChild(opt);
+      });
+
+      render();
+    })
+    .catch(() => {
+      document.getElementById('table-body').innerHTML = '<tr><td colspan="7" class="empty">데이터를 불러올 수 없습니다. screener_result.json을 확인해주세요.</td></tr>';
+    });
+}
+
+// Filter buttons
+document.querySelectorAll('[data-group]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const g = btn.dataset.group;
+    document.querySelectorAll(`[data-group="${g}"]`).forEach(b => {
+      b.classList.remove('active-mkt', 'active-dir', 'active-align');
+    });
+    const cls = g === 'mkt' ? 'active-mkt' : g === 'dir' ? 'active-dir' : 'active-align';
+    btn.classList.add(cls);
+    state[g] = btn.dataset.val;
+    render();
+  });
+});
+
+document.getElementById('sector-select').addEventListener('change', e => {
+  state.sector = e.target.value;
+  render();
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  state.q = e.target.value.trim();
+  render();
+});
+
+document.querySelectorAll('#main-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.sort;
+    if (sortCol === col) { sortDir *= -1; }
+    else { sortCol = col; sortDir = col === 'name' ? 1 : -1; }
+    updateSortHeaders();
+    render();
+  });
+});
+
+init();
+</script>
+</body>
+</html>

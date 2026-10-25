@@ -132,6 +132,7 @@ tr.drag-over td { border-top: 2px solid #534AB7 !important; }
       <a class="gnb-tab" href="index.html">종목 스크리너</a>
       <a class="gnb-tab" href="sector.html">섹터 대시보드</a>
       <a class="gnb-tab active" href="portfolio.html">보유종목 점검</a>
+      <a class="gnb-tab" href="relative.html">시장 상대강도</a>
     </div>
   </div>
 </nav>
@@ -184,7 +185,15 @@ const WATCH_KEY = 'portfolio_watch';
 function getList(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
 }
-function saveList(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
+function saveList(key, arr) {
+  localStorage.setItem(key, JSON.stringify(arr));
+  // localStorage 업데이트 후 API 서버로 자동 동기화
+  fetch('http://localhost:8765/save-watchlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hold: getList(HOLD_KEY), watch: getList(WATCH_KEY) })
+  }).catch(() => {});
+}
 
 function addStock(code, target) {
   const key = target === 'watch' ? WATCH_KEY : HOLD_KEY;
@@ -594,6 +603,13 @@ function exportWatchlist() {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
+// 페이지 로드 시 현재 localStorage → watchlist.json 동기화
+fetch('http://localhost:8765/save-watchlist', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ hold: getList(HOLD_KEY), watch: getList(WATCH_KEY) })
+}).catch(() => {});
 
 // Load data
 fetch('screener_result.json?v=' + Date.now())

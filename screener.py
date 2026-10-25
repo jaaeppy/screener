@@ -58,6 +58,21 @@ for listing_df in [kospi_listing, kosdaq_listing]:
 
 end = datetime.today()
 start = end - timedelta(days=800)
+
+print("시장 지수 주간등락 계산 중...")
+try:
+    _idx_start = (end - timedelta(days=30)).strftime('%Y-%m-%d')
+    kospi_idx  = fdr.DataReader('^KS11', _idx_start)
+    kosdaq_idx = fdr.DataReader('^KQ11', _idx_start)
+    kospi_w  = kospi_idx['Close'].resample('W-FRI').last().dropna()
+    kosdaq_w = kosdaq_idx['Close'].resample('W-FRI').last().dropna()
+    kospi_chg  = round((float(kospi_w.iloc[-1]) - float(kospi_w.iloc[-2])) / float(kospi_w.iloc[-2]) * 100, 2)
+    kosdaq_chg = round((float(kosdaq_w.iloc[-1]) - float(kosdaq_w.iloc[-2])) / float(kosdaq_w.iloc[-2]) * 100, 2)
+    print(f"  코스피 주간: {kospi_chg:+.2f}%  코스닥 주간: {kosdaq_chg:+.2f}%")
+except Exception as e:
+    print(f"  지수 데이터 실패 ({e}), 0으로 설정")
+    kospi_chg = kosdaq_chg = 0.0
+
 results = []
 
 for i, row in stocks.iterrows():
@@ -232,6 +247,7 @@ for i, row in stocks.iterrows():
         else:
             signal = 'weak'
 
+        mkt_chg = kospi_chg if market == 'KOSPI' else kosdaq_chg
         results.append({
             'name': name,
             'code': code,
@@ -244,6 +260,8 @@ for i, row in stocks.iterrows():
             'ma30': int(ma30_val),
             'day_chg': day_chg,
             'chg': chg,
+            'market_chg': mkt_chg,
+            'rel': round(chg - mkt_chg, 1),
             'ma5gap': ma5gap,
             'ma10gap': ma10gap,
             'ma30gap': gap,
@@ -279,6 +297,8 @@ results.sort(key=lambda x: (signal_order[x['signal']], -x['ma30gap']))
 
 output = {
     'updated': datetime.now().strftime('%Y-%m-%d %H:%M'),
+    'kospi_chg': kospi_chg,
+    'kosdaq_chg': kosdaq_chg,
     'stocks': results
 }
 with open('screener_result.json', 'w', encoding='utf-8') as f:
