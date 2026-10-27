@@ -24,13 +24,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .wrap { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
 .green { color: #1D9E75; } .red { color: #E24B4A; }
 
-/* Summary cards */
-.summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-.s-card { background: #fff; border-radius: 10px; padding: 16px; border: 0.5px solid #e5e5e5; }
-.s-card-label { font-size: 11px; color: #aaa; margin-bottom: 6px; }
-.s-card-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 4px; }
-.s-card-val { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.s-card-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+/* Page header */
+.page-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.page-title { font-size: 20px; font-weight: 500; }
+.updated-label { font-size: 11px; color: #aaa; }
+.period-tabs { display: flex; background: #f0f0ee; border: 1px solid #e0e0de; border-radius: 10px; padding: 3px; gap: 2px; }
+.period-tab { padding: 5px 18px; border-radius: 7px; font-size: 13px; font-weight: 500; color: #aaa; cursor: pointer; border: none; background: transparent; font-family: inherit; }
+.period-tab.active { background: #fff; color: #1a1a1a; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+/* Market index cards */
+.mkt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.mkt-card { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 16px 18px; }
+.mkt-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.mkt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mkt-dot.k { background: #185FA5; } .mkt-dot.q { background: #534AB7; }
+.mkt-card-title { font-size: 13px; font-weight: 700; }
+.mkt-card-title.k { color: #185FA5; } .mkt-card-title.q { color: #534AB7; }
+.mkt-chart-wrap { background: #f8f8f6; border-radius: 6px; padding: 6px 4px 4px; margin-bottom: 10px; }
+.mkt-periods { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.mkt-period { text-align: center; padding: 7px 4px; border-radius: 8px; border: 1px solid #ebebeb; cursor: pointer; transition: .15s; }
+.mkt-period:hover { background: #f8f8f6; }
+.mkt-period.active { border-color: #534AB7; background: #EEEDFE; }
+.mkt-period-label { font-size: 10px; color: #aaa; font-weight: 600; letter-spacing: .04em; margin-bottom: 3px; }
+.mkt-period-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* Filters */
 .filter-area { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
@@ -48,7 +64,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .search { padding: 7px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 13px; width: 200px; outline: none; background: #fff; }
 .search:focus { border-color: #534AB7; }
 .sector-select { padding: 7px 12px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 12px; background: #fff; color: #555; outline: none; cursor: pointer; }
-.sector-select:focus { border-color: #534AB7; }
 .count-label { font-size: 12px; color: #888; margin-left: auto; }
 
 /* Badges */
@@ -59,17 +74,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .badge.align  { background: #D4F0E6; color: #0D6B4E; }
 .badge.first  { background: #FDE8F8; color: #8B1A7E; }
 
-/* Relative strength pill */
-.rel-pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; font-variant-numeric: tabular-nums; min-width: 64px; text-align: center; }
-.rel-up { background: #EBF8F2; color: #1D9E75; }
-.rel-dn { background: #FCEBEB; color: #E24B4A; }
-.rel-neu { background: #F0F0F0; color: #888; }
-
-/* Bar */
-.bar-wrap { display: flex; align-items: center; gap: 6px; }
-.bar-bg { width: 50px; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
-.bar-fill { height: 100%; border-radius: 2px; }
-
 /* Table */
 .table-wrap { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; overflow-x: auto; }
 table { width: 100%; min-width: max-content; border-collapse: collapse; font-size: 13px; }
@@ -78,23 +82,33 @@ th:hover { color: #333; }
 th.sorted { color: #534AB7; }
 th .sort-arrow { font-size: 10px; opacity: .4; margin-left: 2px; }
 th.sorted .sort-arrow { opacity: 1; color: #534AB7; }
+th.period-th { min-width: 110px; text-align: center; }
+th.period-th.sorted { background: #EEEDFE; }
 td { padding: 8px 12px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; white-space: nowrap; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafaf8; }
 .section-row td { background: #f7f6f3; font-size: 11px; font-weight: 600; color: #555; padding: 6px 12px; border-bottom: 0.5px solid #eee; border-top: 0.5px solid #eee; }
 .stock-name { font-size: 13px; font-weight: 600; }
-.stock-code { font-size: 11px; color: #aaa; margin-top: 1px; }
 
 .empty { padding: 48px; text-align: center; color: #aaa; font-size: 14px; }
-.updated-row { font-size: 11px; color: #aaa; margin-bottom: 14px; }
 
-/* Mobile */
+/* Period column cell */
+.p-col { text-align: center; }
+.p-chg { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; display: block; margin-bottom: 3px; }
+.p-rel { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; display: inline-block; }
+.p-rel.up { background: #EBF8F2; color: #1D9E75; }
+.p-rel.dn { background: #FCEBEB; color: #E24B4A; }
+.p-rel.neu { background: #f0f0f0; color: #aaa; }
+
+/* Mini chart cell */
+.mini-chart { display: flex; align-items: center; justify-content: center; }
+
+/* Mobile cards */
 .card-list { display: none; }
 .card { background: #fff; border-radius: 12px; border: 0.5px solid #e5e5e5; padding: 14px; margin-bottom: 10px; }
 .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 .card-name { font-size: 15px; font-weight: 600; }
 .card-code { font-size: 11px; color: #aaa; margin-top: 2px; }
-.card-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .card-divider { height: 0.5px; background: #f0f0f0; margin: 10px 0; }
 .card-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .card-item-label { font-size: 11px; color: #aaa; margin-bottom: 3px; }
@@ -102,14 +116,14 @@ tr:hover td { background: #fafaf8; }
 
 @media (max-width: 768px) {
   .wrap { padding: 16px 12px; }
-  .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
-  .s-card-val { font-size: 22px; }
+  .mkt-grid { grid-template-columns: 1fr; gap: 10px; }
   .filter-divider { display: none; }
   .filter-area { gap: 8px; margin-bottom: 12px; }
   .search { width: 100%; }
   .count-label { margin-left: 0; }
   .table-wrap { display: none; }
   .card-list { display: block; }
+  .period-tab { padding: 5px 12px; font-size: 12px; }
 }
 </style>
 </head>
@@ -127,36 +141,46 @@ tr:hover td { background: #fafaf8; }
 </nav>
 
 <div class="wrap">
-  <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px">
-    <h1 style="font-size:20px;font-weight:500">시장 상대강도</h1>
-    <span class="updated-row" id="updated-label"></span>
+  <div class="page-top">
+    <div>
+      <div class="page-title">시장 상대강도</div>
+      <div class="updated-label" id="updated-label"></div>
+    </div>
+    <div class="period-tabs" id="period-tabs">
+      <button class="period-tab active" data-period="0">1주</button>
+      <button class="period-tab" data-period="1">2주</button>
+      <button class="period-tab" data-period="2">3주</button>
+      <button class="period-tab" data-period="3">한달</button>
+    </div>
   </div>
 
-  <!-- Summary cards -->
-  <div class="summary-cards">
-    <div class="s-card">
-      <div class="s-card-label">KOSPI 주간</div>
-      <div class="s-card-title" style="color:#185FA5">코스피</div>
-      <div class="s-card-val" id="kospi-chg-val">—</div>
-      <div class="s-card-sub" id="kospi-chg-sub"></div>
+  <!-- Market index cards -->
+  <div class="mkt-grid">
+    <div class="mkt-card">
+      <div class="mkt-card-header">
+        <div class="mkt-dot k"></div>
+        <div class="mkt-card-title k">코스피 KOSPI</div>
+      </div>
+      <div class="mkt-chart-wrap"><canvas id="chart-kospi" height="120" style="width:100%;height:120px;display:block"></canvas></div>
+      <div class="mkt-periods" id="kospi-periods">
+        <div class="mkt-period active" data-i="0"><div class="mkt-period-label">1주</div><div class="mkt-period-val" id="kp-0">—</div></div>
+        <div class="mkt-period" data-i="1"><div class="mkt-period-label">2주</div><div class="mkt-period-val" id="kp-1">—</div></div>
+        <div class="mkt-period" data-i="2"><div class="mkt-period-label">3주</div><div class="mkt-period-val" id="kp-2">—</div></div>
+        <div class="mkt-period" data-i="3"><div class="mkt-period-label">한달</div><div class="mkt-period-val" id="kp-3">—</div></div>
+      </div>
     </div>
-    <div class="s-card">
-      <div class="s-card-label">KOSDAQ 주간</div>
-      <div class="s-card-title" style="color:#534AB7">코스닥</div>
-      <div class="s-card-val" id="kosdaq-chg-val">—</div>
-      <div class="s-card-sub" id="kosdaq-chg-sub"></div>
-    </div>
-    <div class="s-card">
-      <div class="s-card-label">시장 대비 강세</div>
-      <div class="s-card-title" style="color:#1D9E75">상대 강세 종목</div>
-      <div class="s-card-val green" id="strong-count">—</div>
-      <div class="s-card-sub" id="strong-avg"></div>
-    </div>
-    <div class="s-card">
-      <div class="s-card-label">시장 대비 약세</div>
-      <div class="s-card-title" style="color:#E24B4A">상대 약세 종목</div>
-      <div class="s-card-val red" id="weak-count">—</div>
-      <div class="s-card-sub" id="weak-avg"></div>
+    <div class="mkt-card">
+      <div class="mkt-card-header">
+        <div class="mkt-dot q"></div>
+        <div class="mkt-card-title q">코스닥 KOSDAQ</div>
+      </div>
+      <div class="mkt-chart-wrap"><canvas id="chart-kosdaq" height="120" style="width:100%;height:120px;display:block"></canvas></div>
+      <div class="mkt-periods" id="kosdaq-periods">
+        <div class="mkt-period active" data-i="0"><div class="mkt-period-label">1주</div><div class="mkt-period-val" id="kq-0">—</div></div>
+        <div class="mkt-period" data-i="1"><div class="mkt-period-label">2주</div><div class="mkt-period-val" id="kq-1">—</div></div>
+        <div class="mkt-period" data-i="2"><div class="mkt-period-label">3주</div><div class="mkt-period-val" id="kq-2">—</div></div>
+        <div class="mkt-period" data-i="3"><div class="mkt-period-label">한달</div><div class="mkt-period-val" id="kq-3">—</div></div>
+      </div>
     </div>
   </div>
 
@@ -198,11 +222,11 @@ tr:hover td { background: #fafaf8; }
       <thead>
         <tr>
           <th data-sort="name">종목 <span class="sort-arrow">↕</span></th>
-          <th data-sort="chg">주간 등락 <span class="sort-arrow">↕</span></th>
-          <th data-sort="market_chg">시장 등락 <span class="sort-arrow">↕</span></th>
-          <th data-sort="rel" class="sorted">상대강도 <span class="sort-arrow">▼</span></th>
-          <th data-sort="ma10gap">10주 괴리율 <span class="sort-arrow">↕</span></th>
-          <th data-sort="market_cap">시총 <span class="sort-arrow">↕</span></th>
+          <th>주봉차트</th>
+          <th class="period-th sorted" data-period="0">1주 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">▼</span></span></th>
+          <th class="period-th" data-period="1">2주 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">↕</span></span></th>
+          <th class="period-th" data-period="2">3주 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">↕</span></span></th>
+          <th class="period-th" data-period="3">한달 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">↕</span></span></th>
           <th>정배열</th>
         </tr>
       </thead>
@@ -215,79 +239,193 @@ tr:hover td { background: #fafaf8; }
 </div>
 
 <script>
+// ── 상태 ─────────────────────────────────────────────────────────────────────
 let ALL = [];
-let sortCol = 'rel', sortDir = -1;
+let activePeriod = 0, sortDir = -1, sortByName = false;
 let state = { mkt: '전체', dir: '전체', align: '전체', sector: '전체', q: '' };
-let kospiChg = 0, kosdaqChg = 0;
+const REL_KEYS  = ['rel',  'rel2', 'rel3', 'rel4'];
+const CHG_KEYS  = ['chg',  'chg2', 'chg3', 'chg4'];
+const PERIOD_LABELS = ['1주', '2주', '3주', '한달'];
 
+// ── SVG mini chart (from screener) ───────────────────────────────────────────
+function chartSvg(candles, ma5, ma10, ma20, ma30, w, h) {
+  if (!candles || !candles.length) return '';
+  const pad = {t:4,b:2,l:2,r:2};
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const allVals = [
+    ...candles.flatMap(c=>[c[1],c[2]]),
+    ...ma5.filter(v=>v>0), ...ma10.filter(v=>v>0),
+    ...ma20.filter(v=>v>0), ...ma30.filter(v=>v>0)
+  ];
+  if (!allVals.length) return '';
+  const lo = Math.min(...allVals), hi = Math.max(...allVals);
+  const range = hi - lo || 1;
+  const n = candles.length;
+  const slotW = iw / n;
+  const cw = Math.max(1, slotW * 0.55);
+  const py = v => pad.t + ih - ((v - lo) / range * ih);
+  const px = i => pad.l + (i + 0.5) * slotW;
+  let s = `<svg width="${w}" height="${h}" style="display:block;overflow:visible">`;
+  candles.forEach(([o,hh,l,c],i) => {
+    const x = px(i), bull = c >= o, col = bull ? '#1D9E75' : '#E24B4A';
+    const top = Math.min(py(o),py(c)), bh = Math.max(1,Math.abs(py(o)-py(c)));
+    s += `<line x1="${x}" y1="${py(hh)}" x2="${x}" y2="${py(l)}" stroke="${col}" stroke-width="1" opacity="0.6"/>`;
+    s += `<rect x="${x-cw/2}" y="${top}" width="${cw}" height="${bh}" fill="${col}" opacity="0.85"/>`;
+  });
+  const line = (vals, color) => {
+    let d='', prev=null;
+    vals.forEach((v,i) => {
+      if (!v) { prev=null; return; }
+      const x=px(i), y=py(v);
+      d += prev===null ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`;
+      prev = v;
+    });
+    if (d) s += `<path d="${d}" stroke="${color}" stroke-width="1.2" fill="none"/>`;
+  };
+  line(ma30,'#3498DB'); line(ma20,'#9B59B6'); line(ma10,'#F5A623'); line(ma5,'#E24B4A');
+  s += '</svg>';
+  return s;
+}
+
+// ── Canvas index chart ────────────────────────────────────────────────────────
+function drawIndexChart(canvasId, chartData) {
+  if (!chartData || !chartData.candles || !chartData.candles.length) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 520, H = 120;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const { candles, vols, ma5, ma10, ma20, ma30 } = chartData;
+
+  const PAD = {t:6, b:8, l:6, r:6};
+  const CRATIO = 0.65, GAP = 3;
+  const iw = W - PAD.l - PAD.r;
+  const ih = H - PAD.t - PAD.b;
+  const candleH = Math.round(ih * CRATIO);
+  const volH = ih - candleH - GAP;
+
+  const n = candles.length;
+  const allVals = [
+    ...candles.flatMap(c=>[c[1],c[2]]),
+    ...(ma5||[]).filter(v=>v>0), ...(ma10||[]).filter(v=>v>0),
+    ...(ma20||[]).filter(v=>v>0), ...(ma30||[]).filter(v=>v>0)
+  ];
+  if (!allVals.length) return;
+  const lo = Math.min(...allVals), hi = Math.max(...allVals);
+  const range = hi - lo || 1;
+  const slotW = iw / n;
+  const cw = Math.max(1.5, slotW * 0.55);
+  const py = v => PAD.t + candleH - ((v - lo) / range * candleH);
+  const px = i => PAD.l + (i + 0.5) * slotW;
+  const volTop = PAD.t + candleH + GAP;
+
+  // Volume
+  if (vols && vols.length === n) {
+    const maxVol = Math.max(...vols) || 1;
+    ctx.strokeStyle = '#ebebeb'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.l, volTop-1); ctx.lineTo(W-PAD.r, volTop-1); ctx.stroke();
+    vols.forEach((v,i) => {
+      const bull = candles[i][3] >= candles[i][0];
+      ctx.fillStyle = bull ? 'rgba(29,158,117,0.4)' : 'rgba(226,75,74,0.4)';
+      const bh = Math.max(1,(v/maxVol)*volH);
+      ctx.fillRect(px(i)-cw/2, volTop+volH-bh, cw, bh);
+    });
+  }
+
+  // Candles
+  candles.forEach(([o,hh,l,c],i) => {
+    const bull = c >= o, col = bull ? '#1D9E75' : '#E24B4A';
+    ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
+    ctx.beginPath(); ctx.moveTo(px(i), py(hh)); ctx.lineTo(px(i), py(l)); ctx.stroke();
+    ctx.globalAlpha = 0.85; ctx.fillStyle = col;
+    const top = Math.min(py(o),py(c)), bh = Math.max(1.5, Math.abs(py(o)-py(c)));
+    ctx.fillRect(px(i)-cw/2, top, cw, bh);
+    ctx.globalAlpha = 1;
+  });
+
+  // MA lines
+  const drawLine = (vals, color, lw=1.5) => {
+    if (!vals || !vals.length) return;
+    ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
+    let started = false;
+    vals.forEach((v,i) => {
+      if (!v) { started=false; return; }
+      if (!started) { ctx.moveTo(px(i), py(v)); started=true; }
+      else ctx.lineTo(px(i), py(v));
+    });
+    ctx.stroke();
+  };
+  drawLine(ma30,'#3498DB'); drawLine(ma20,'#9B59B6'); drawLine(ma10,'#F5A623'); drawLine(ma5,'#E24B4A');
+
+  // Legend
+  const legends = [['MA5','#E24B4A'],['MA10','#F5A623'],['MA20','#9B59B6'],['MA30','#3498DB']];
+  ctx.font = '8px -apple-system, sans-serif'; ctx.textAlign = 'left';
+  let lx = PAD.l;
+  legends.forEach(([label, col]) => {
+    ctx.fillStyle = col; ctx.fillRect(lx, PAD.t+1, 10, 2);
+    ctx.fillStyle = '#aaa'; ctx.fillText(label, lx+13, PAD.t+5); lx += 34;
+  });
+}
+
+// ── 유틸 ─────────────────────────────────────────────────────────────────────
 function fmtChg(v) {
   if (v == null) return '—';
   const cls = v > 0 ? 'green' : v < 0 ? 'red' : '';
   return `<span class="${cls}">${v > 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
-}
-function fmtRel(r) {
-  if (r == null) return '—';
-  const cls = r > 0 ? 'rel-up' : r < 0 ? 'rel-dn' : 'rel-neu';
-  const bar = Math.min(Math.abs(r) / 15 * 100, 100);
-  const col = r > 0 ? '#1D9E75' : '#E24B4A';
-  return `<div class="bar-wrap">
-    <span class="rel-pill ${cls}">${r > 0 ? '+' : ''}${r.toFixed(1)}%</span>
-    <div class="bar-bg"><div class="bar-fill" style="width:${bar}%;background:${col}"></div></div>
-  </div>`;
 }
 function fmtAlign(s) {
   if (s.first_full_align) return '<span class="badge first">최초정배열</span>';
   if (s.full_align)       return '<span class="badge align">전체정배열</span>';
   return '—';
 }
-function fmtCap(v) {
-  if (!v) return '—';
-  if (v >= 1e12) return (v / 1e12).toFixed(1) + '조';
-  if (v >= 1e8)  return Math.round(v / 1e8) + '억';
-  return v.toLocaleString();
+function periodCell(s, p) {
+  const chg = s[CHG_KEYS[p]] ?? null;
+  const rel  = s[REL_KEYS[p]]  ?? null;
+  if (chg == null) return '<td class="p-col">—</td>';
+  const chgCls = chg > 0 ? 'green' : chg < 0 ? 'red' : '';
+  const relCls = rel > 0 ? 'up' : rel < 0 ? 'dn' : 'neu';
+  return `<td class="p-col">
+    <span class="p-chg ${chgCls}">${chg > 0 ? '+' : ''}${chg.toFixed(1)}%</span>
+    <span class="p-rel ${relCls}">${rel > 0 ? '+' : ''}${(rel??0).toFixed(1)}%</span>
+  </td>`;
 }
 
+// ── 필터링 & 정렬 ─────────────────────────────────────────────────────────────
 function filtered() {
+  const relKey = REL_KEYS[activePeriod];
   return ALL.filter(s => {
     if (state.mkt !== '전체' && s.market !== state.mkt) return false;
-    if (state.dir === '강세' && (s.rel ?? 0) <= 0) return false;
-    if (state.dir === '약세' && (s.rel ?? 0) >= 0) return false;
+    if (state.dir === '강세' && (s[relKey] ?? 0) <= 0) return false;
+    if (state.dir === '약세' && (s[relKey] ?? 0) >= 0) return false;
     if (state.align === '정배열' && !s.full_align) return false;
     if (state.align === '전체정배열' && !s.full_align) return false;
     if (state.sector !== '전체' && s.sector !== state.sector) return false;
-    if (state.q) {
-      const q = state.q;
-      if (!s.name.includes(q) && !s.code.includes(q)) return false;
-    }
+    if (state.q && !s.name.includes(state.q) && !s.code.includes(state.q)) return false;
     return true;
   });
 }
 
 function sorted(arr) {
+  const relKey = REL_KEYS[activePeriod];
   return [...arr].sort((a, b) => {
-    let va = a[sortCol] ?? (sortCol === 'name' ? '' : -Infinity);
-    let vb = b[sortCol] ?? (sortCol === 'name' ? '' : -Infinity);
-    if (sortCol === 'name') return sortDir * va.localeCompare(vb, 'ko');
-    return sortDir * (va - vb);
+    if (sortByName) return sortDir * (a.name || '').localeCompare(b.name || '', 'ko');
+    return sortDir * ((b[relKey] ?? -Infinity) - (a[relKey] ?? -Infinity));
   });
 }
 
+// ── 렌더 ─────────────────────────────────────────────────────────────────────
 function render() {
   const rows = sorted(filtered());
-  const ups = rows.filter(s => (s.rel ?? 0) > 0);
-  const dns = rows.filter(s => (s.rel ?? 0) <= 0);
+  const relKey = REL_KEYS[activePeriod];
+  const ups = rows.filter(s => (s[relKey] ?? 0) > 0);
+  const dns = rows.filter(s => (s[relKey] ?? 0) <= 0);
 
-  // summary
-  const strongAvg = ups.length ? (ups.reduce((a, s) => a + (s.rel ?? 0), 0) / ups.length).toFixed(1) : 0;
-  const weakAvg   = dns.length ? (dns.reduce((a, s) => a + (s.rel ?? 0), 0) / dns.length).toFixed(1) : 0;
-  document.getElementById('strong-count').textContent = ups.length + '개';
-  document.getElementById('strong-avg').textContent = ups.length ? `평균 상대강도 +${strongAvg}%` : '';
-  document.getElementById('weak-count').textContent = dns.length + '개';
-  document.getElementById('weak-avg').textContent = dns.length ? `평균 상대강도 ${weakAvg}%` : '';
+  document.getElementById('count-label').textContent = `${rows.length}개 종목 · ${PERIOD_LABELS[activePeriod]} 상대강도 순`;
 
-  document.getElementById('count-label').textContent = `${rows.length}개 종목`;
-
-  // table
   let html = '';
   if (ups.length && dns.length) {
     html += `<tr class="section-row"><td colspan="7">▲ 시장 대비 강세 (${ups.length}개)</td></tr>`;
@@ -303,40 +441,46 @@ function render() {
   // mobile cards
   let cards = '';
   if (ups.length && dns.length) {
-    if (ups.length) { cards += `<div class="card-sector-header">▲ 강세 ${ups.length}개</div>`; ups.forEach(s => { cards += cardHtml(s); }); }
-    if (dns.length) { cards += `<div class="card-sector-header" style="margin-top:12px">▼ 약세 ${dns.length}개</div>`; dns.forEach(s => { cards += cardHtml(s); }); }
+    if (ups.length) { cards += `<div style="font-size:11px;font-weight:600;color:#555;padding:6px 0">▲ 강세 ${ups.length}개</div>`; ups.forEach(s => { cards += cardHtml(s); }); }
+    if (dns.length) { cards += `<div style="font-size:11px;font-weight:600;color:#555;padding:12px 0 6px">▼ 약세 ${dns.length}개</div>`; dns.forEach(s => { cards += cardHtml(s); }); }
   } else {
     rows.forEach(s => { cards += cardHtml(s); });
   }
   document.getElementById('card-list').innerHTML = cards || '<div class="empty">조건에 맞는 종목이 없습니다.</div>';
+
+  updateSortHeaders();
 }
 
 function rowHtml(s) {
+  const mini = s.candles ? chartSvg(s.candles, s.ma5_line||[], s.ma10_line||[], s.ma20_line||[], s.ma30_line||[], 88, 40) : '';
   return `<tr>
     <td>
       <div class="stock-name">${s.name}</div>
       <div style="display:flex;gap:4px;margin-top:3px">
-        <span class="${s.market.toLowerCase()}">${s.market}</span>
+        <span class="${(s.market||'').toLowerCase()}">${s.market||''}</span>
         <span class="sector-tag">${s.sector || ''}</span>
       </div>
     </td>
-    <td>${fmtChg(s.chg)}</td>
-    <td>${fmtChg(s.market_chg)}</td>
-    <td>${fmtRel(s.rel)}</td>
-    <td>${s.ma10gap != null ? `<span class="${s.ma10gap >= 0 ? 'green' : 'red'}">${s.ma10gap > 0 ? '+' : ''}${s.ma10gap.toFixed(1)}%</span>` : '—'}</td>
-    <td>${fmtCap(s.market_cap)}</td>
+    <td class="mini-chart">${mini}</td>
+    ${periodCell(s, 0)}
+    ${periodCell(s, 1)}
+    ${periodCell(s, 2)}
+    ${periodCell(s, 3)}
     <td>${fmtAlign(s)}</td>
   </tr>`;
 }
 
 function cardHtml(s) {
-  const relCls = (s.rel ?? 0) > 0 ? 'green' : 'red';
+  const relKey = REL_KEYS[activePeriod];
+  const chgKey = CHG_KEYS[activePeriod];
+  const rel = s[relKey] ?? 0, chg = s[chgKey] ?? 0;
+  const relCls = rel > 0 ? 'green' : 'red';
   return `<div class="card">
     <div class="card-header">
       <div>
         <div class="card-name">${s.name}</div>
-        <div class="card-code" style="display:flex;gap:4px;margin-top:3px">
-          <span class="${s.market.toLowerCase()}">${s.market}</span>
+        <div style="display:flex;gap:4px;margin-top:3px">
+          <span class="${(s.market||'').toLowerCase()}">${s.market||''}</span>
           <span class="sector-tag">${s.sector || ''}</span>
         </div>
       </div>
@@ -345,8 +489,8 @@ function cardHtml(s) {
     <div class="card-divider"></div>
     <div class="card-grid">
       <div>
-        <div class="card-item-label">주간 등락</div>
-        <div class="card-item-val">${s.chg != null ? `<span class="${(s.chg??0)>0?'green':'red'}">${(s.chg??0)>0?'+':''}${(s.chg??0).toFixed(1)}%</span>` : '—'}</div>
+        <div class="card-item-label">${PERIOD_LABELS[activePeriod]} 등락</div>
+        <div class="card-item-val"><span class="${chg>0?'green':'red'}">${chg>0?'+':''}${chg.toFixed(1)}%</span></div>
       </div>
       <div>
         <div class="card-item-label">시장 등락</div>
@@ -354,58 +498,135 @@ function cardHtml(s) {
       </div>
       <div>
         <div class="card-item-label">상대강도</div>
-        <div class="card-item-val"><span class="${relCls}">${(s.rel??0)>0?'+':''}${(s.rel??0).toFixed(1)}%</span></div>
+        <div class="card-item-val"><span class="${relCls}">${rel>0?'+':''}${rel.toFixed(1)}%</span></div>
       </div>
     </div>
   </div>`;
 }
 
 function updateSortHeaders() {
-  document.querySelectorAll('#main-table th[data-sort]').forEach(th => {
-    const col = th.dataset.sort;
+  document.querySelectorAll('#main-table th.period-th').forEach((th, i) => {
+    const isSorted = !sortByName && i === activePeriod;
+    th.classList.toggle('sorted', isSorted);
     const arrow = th.querySelector('.sort-arrow');
-    th.classList.toggle('sorted', col === sortCol);
-    if (arrow) arrow.textContent = col === sortCol ? (sortDir === -1 ? '▼' : '▲') : '↕';
+    if (arrow) arrow.textContent = isSorted ? (sortDir === -1 ? '▼' : '▲') : '↕';
+  });
+  const nameTh = document.querySelector('#main-table th[data-sort="name"]');
+  if (nameTh) {
+    nameTh.classList.toggle('sorted', sortByName);
+    const arrow = nameTh.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = sortByName ? (sortDir === -1 ? '▼' : '▲') : '↕';
+  }
+}
+
+// ── 기간 탭 / 컬럼 클릭 ──────────────────────────────────────────────────────
+document.querySelectorAll('#period-tabs .period-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const i = parseInt(tab.dataset.period);
+    activePeriod = i; sortDir = -1; sortByName = false;
+    document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
+    syncMktPeriods(i);
+    render();
+  });
+});
+
+document.querySelectorAll('#main-table th.period-th').forEach((th, i) => {
+  th.addEventListener('click', () => {
+    if (!sortByName && activePeriod === i) { sortDir *= -1; }
+    else { activePeriod = i; sortDir = -1; sortByName = false; }
+    document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
+    syncMktPeriods(i);
+    render();
+  });
+});
+
+document.querySelector('#main-table th[data-sort="name"]').addEventListener('click', () => {
+  if (sortByName) { sortDir *= -1; }
+  else { sortByName = true; sortDir = 1; }
+  render();
+});
+
+function syncMktPeriods(i) {
+  ['kospi-periods','kosdaq-periods'].forEach(id => {
+    document.querySelectorAll(`#${id} .mkt-period`).forEach(p => p.classList.toggle('active', parseInt(p.dataset.i) === i));
   });
 }
 
+['kospi-periods','kosdaq-periods'].forEach(id => {
+  document.querySelectorAll(`#${id} .mkt-period`).forEach(p => {
+    p.addEventListener('click', () => {
+      const i = parseInt(p.dataset.i);
+      activePeriod = i; sortDir = -1; sortByName = false;
+      document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
+      syncMktPeriods(i);
+      render();
+    });
+  });
+});
+
+// ── 필터 버튼 ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-group]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const g = btn.dataset.group;
+    document.querySelectorAll(`[data-group="${g}"]`).forEach(b => b.classList.remove('active-mkt','active-dir','active-align'));
+    btn.classList.add(g==='mkt'?'active-mkt':g==='dir'?'active-dir':'active-align');
+    state[g] = btn.dataset.val;
+    render();
+  });
+});
+
+document.getElementById('sector-select').addEventListener('change', e => { state.sector = e.target.value; render(); });
+document.getElementById('search-input').addEventListener('input', e => { state.q = e.target.value.trim(); render(); });
+
+// ── 초기화 ───────────────────────────────────────────────────────────────────
 function init() {
   fetch('screener_result.json?_=' + Date.now())
     .then(r => r.json())
     .then(data => {
-      const stocks = data.stocks || data;
-      kospiChg  = data.kospi_chg  ?? 0;
-      kosdaqChg = data.kosdaq_chg ?? 0;
+      if (data.updated) document.getElementById('updated-label').textContent = '기준 ' + data.updated;
 
-      // Backfill rel/market_chg if screener hasn't been rerun yet
-      ALL = stocks.map(s => ({
-        ...s,
-        market_chg: s.market_chg ?? (s.market === 'KOSPI' ? kospiChg : kosdaqChg),
-        rel: s.rel ?? parseFloat(((s.chg ?? 0) - (s.market === 'KOSPI' ? kospiChg : kosdaqChg)).toFixed(1))
-      }));
+      const kospiChgs  = data.kospi_chgs  || [data.kospi_chg  || 0, 0, 0, 0];
+      const kosdaqChgs = data.kosdaq_chgs || [data.kosdaq_chg || 0, 0, 0, 0];
 
-      // Market summary
-      const kpEl = document.getElementById('kospi-chg-val');
-      kpEl.textContent = (kospiChg > 0 ? '+' : '') + kospiChg.toFixed(2) + '%';
-      kpEl.className = 's-card-val ' + (kospiChg > 0 ? 'green' : 'red');
-      document.getElementById('kospi-chg-sub').textContent = '직전 주 대비';
+      // 지수 기간별 수치
+      ['kp','kq'].forEach((pfx, mktIdx) => {
+        const chgs = mktIdx === 0 ? kospiChgs : kosdaqChgs;
+        for (let i = 0; i < 4; i++) {
+          const el = document.getElementById(`${pfx}-${i}`);
+          if (!el) continue;
+          const v = chgs[i] || 0;
+          el.textContent = (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+          el.className = 'mkt-period-val ' + (v > 0 ? 'green' : v < 0 ? 'red' : '');
+        }
+      });
 
-      const kqEl = document.getElementById('kosdaq-chg-val');
-      kqEl.textContent = (kosdaqChg > 0 ? '+' : '') + kosdaqChg.toFixed(2) + '%';
-      kqEl.className = 's-card-val ' + (kosdaqChg > 0 ? 'green' : 'red');
-      document.getElementById('kosdaq-chg-sub').textContent = '직전 주 대비';
+      // 지수 캔들차트
+      if (data.kospi_chart)  { requestAnimationFrame(() => drawIndexChart('chart-kospi',  data.kospi_chart)); }
+      if (data.kosdaq_chart) { requestAnimationFrame(() => drawIndexChart('chart-kosdaq', data.kosdaq_chart)); }
 
-      if (data.updated) {
-        document.getElementById('updated-label').textContent = '기준 ' + data.updated;
-      }
+      // 종목 데이터 — rel 필드 없으면 폴백 계산
+      ALL = (data.stocks || []).map(s => {
+        const mc = s.market === 'KOSPI' ? kospiChgs[0] : kosdaqChgs[0];
+        return {
+          ...s,
+          market_chg: s.market_chg ?? mc,
+          rel:  s.rel  ?? parseFloat(((s.chg  || 0) - mc).toFixed(1)),
+          rel2: s.rel2 ?? 0,
+          rel3: s.rel3 ?? 0,
+          rel4: s.rel4 ?? 0,
+          chg2: s.chg2 ?? 0,
+          chg3: s.chg3 ?? 0,
+          chg4: s.chg4 ?? 0,
+        };
+      });
 
-      // Sector dropdown
+      // 업종 드롭다운
       const sects = ['전체', ...new Set(ALL.map(s => s.sector).filter(Boolean))].sort((a,b) => a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
       const sel = document.getElementById('sector-select');
       sects.forEach(sec => {
         const opt = document.createElement('option');
-        opt.value = opt.textContent = sec === '전체' ? '업종 전체' : sec;
         opt.value = sec;
+        opt.textContent = sec === '전체' ? '업종 전체' : sec;
         sel.appendChild(opt);
       });
 
@@ -415,40 +636,6 @@ function init() {
       document.getElementById('table-body').innerHTML = '<tr><td colspan="7" class="empty">데이터를 불러올 수 없습니다. screener_result.json을 확인해주세요.</td></tr>';
     });
 }
-
-// Filter buttons
-document.querySelectorAll('[data-group]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const g = btn.dataset.group;
-    document.querySelectorAll(`[data-group="${g}"]`).forEach(b => {
-      b.classList.remove('active-mkt', 'active-dir', 'active-align');
-    });
-    const cls = g === 'mkt' ? 'active-mkt' : g === 'dir' ? 'active-dir' : 'active-align';
-    btn.classList.add(cls);
-    state[g] = btn.dataset.val;
-    render();
-  });
-});
-
-document.getElementById('sector-select').addEventListener('change', e => {
-  state.sector = e.target.value;
-  render();
-});
-
-document.getElementById('search-input').addEventListener('input', e => {
-  state.q = e.target.value.trim();
-  render();
-});
-
-document.querySelectorAll('#main-table th[data-sort]').forEach(th => {
-  th.addEventListener('click', () => {
-    const col = th.dataset.sort;
-    if (sortCol === col) { sortDir *= -1; }
-    else { sortCol = col; sortDir = col === 'name' ? 1 : -1; }
-    updateSortHeaders();
-    render();
-  });
-});
 
 init();
 </script>

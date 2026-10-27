@@ -59,19 +59,62 @@ for listing_df in [kospi_listing, kosdaq_listing]:
 end = datetime.today()
 start = end - timedelta(days=800)
 
-print("시장 지수 주간등락 계산 중...")
+print("시장 지수 주간등락 및 차트 데이터 계산 중...")
 try:
-    _idx_start = (end - timedelta(days=30)).strftime('%Y-%m-%d')
+    _idx_start = (end - timedelta(days=400)).strftime('%Y-%m-%d')
     kospi_idx  = fdr.DataReader('^KS11', _idx_start)
     kosdaq_idx = fdr.DataReader('^KQ11', _idx_start)
-    kospi_w  = kospi_idx['Close'].resample('W-FRI').last().dropna()
-    kosdaq_w = kosdaq_idx['Close'].resample('W-FRI').last().dropna()
-    kospi_chg  = round((float(kospi_w.iloc[-1]) - float(kospi_w.iloc[-2])) / float(kospi_w.iloc[-2]) * 100, 2)
-    kosdaq_chg = round((float(kosdaq_w.iloc[-1]) - float(kosdaq_w.iloc[-2])) / float(kosdaq_w.iloc[-2]) * 100, 2)
-    print(f"  코스피 주간: {kospi_chg:+.2f}%  코스닥 주간: {kosdaq_chg:+.2f}%")
+
+    def _weekly_ohlcv(df):
+        agg = {'Open':'first','High':'max','Low':'min','Close':'last'}
+        if 'Volume' in df.columns:
+            agg['Volume'] = 'sum'
+        w = df[list(agg.keys())].resample('W-FRI').agg(agg).dropna(subset=['Close'])
+        if 'Volume' not in w.columns:
+            w['Volume'] = 0
+        return w
+
+    kospi_w_ohlc  = _weekly_ohlcv(kospi_idx)
+    kosdaq_w_ohlc = _weekly_ohlcv(kosdaq_idx)
+    kospi_w  = kospi_w_ohlc['Close']
+    kosdaq_w = kosdaq_w_ohlc['Close']
+
+    def _multi_chg(s):
+        return [
+            round((float(s.iloc[-1]) - float(s.iloc[-1-n])) / float(s.iloc[-1-n]) * 100, 2)
+            if len(s) > n else 0.0
+            for n in [1, 2, 3, 4]
+        ]
+
+    kospi_chgs  = _multi_chg(kospi_w)
+    kosdaq_chgs = _multi_chg(kosdaq_w)
+    kospi_chg   = kospi_chgs[0]
+    kosdaq_chg  = kosdaq_chgs[0]
+    print(f"  코스피: 1주{kospi_chg:+.2f}% 2주{kospi_chgs[1]:+.2f}% 3주{kospi_chgs[2]:+.2f}% 한달{kospi_chgs[3]:+.2f}%")
+    print(f"  코스닥: 1주{kosdaq_chg:+.2f}% 2주{kosdaq_chgs[1]:+.2f}% 3주{kosdaq_chgs[2]:+.2f}% 한달{kosdaq_chgs[3]:+.2f}%")
+
+    def _idx_chart(ohlc_df, close_s):
+        tail = ohlc_df.tail(52)
+        ma5  = close_s.rolling(5).mean()
+        ma10 = close_s.rolling(10).mean()
+        ma20 = close_s.rolling(20).mean()
+        ma30 = close_s.rolling(30).mean()
+        def _tail(s): return [int(v) if not pd.isna(v) and v != 0 else 0 for v in s.tail(52)]
+        return {
+            'candles': [[int(r.Open),int(r.High),int(r.Low),int(r.Close)] for _,r in tail.iterrows()],
+            'vols':    [int(r.Volume) for _,r in tail.iterrows()],
+            'ma5':  _tail(ma5), 'ma10': _tail(ma10),
+            'ma20': _tail(ma20),'ma30': _tail(ma30),
+        }
+
+    kospi_chart  = _idx_chart(kospi_w_ohlc,  kospi_w)
+    kosdaq_chart = _idx_chart(kosdaq_w_ohlc, kosdaq_w)
+
 except Exception as e:
     print(f"  지수 데이터 실패 ({e}), 0으로 설정")
     kospi_chg = kosdaq_chg = 0.0
+    kospi_chgs = kosdaq_chgs = [0.0, 0.0, 0.0, 0.0]
+    kospi_chart = kosdaq_chart = {}
 
 results = []
 
@@ -118,6 +161,9 @@ for i, row in stocks.iterrows():
         gap      = round((price - ma30_val) / ma30_val * 100, 1)
         prev_price = float(weekly.iloc[-2])
         chg      = round((price - prev_price) / prev_price * 100, 1)
+        chg2 = round((price - float(weekly.iloc[-3])) / float(weekly.iloc[-3]) * 100, 1) if len(weekly) > 3 else 0.0
+        chg3 = round((price - float(weekly.iloc[-4])) / float(weekly.iloc[-4]) * 100, 1) if len(weekly) > 4 else 0.0
+        chg4 = round((price - float(weekly.iloc[-5])) / float(weekly.iloc[-5]) * 100, 1) if len(weekly) > 5 else 0.0
         ma30_slope = round((ma30_val - ma30_prev) / ma30_prev * 100, 2)
 
         weekly_vol = df['Volume'].resample('W-FRI').sum().dropna()
@@ -247,7 +293,11 @@ for i, row in stocks.iterrows():
         else:
             signal = 'weak'
 
-        mkt_chg = kospi_chg if market == 'KOSPI' else kosdaq_chg
+        _chgs = kospi_chgs if market == 'KOSPI' else kosdaq_chgs
+        mkt_chg  = _chgs[0]
+        mkt_chg2 = _chgs[1]
+        mkt_chg3 = _chgs[2]
+        mkt_chg4 = _chgs[3]
         results.append({
             'name': name,
             'code': code,
@@ -260,8 +310,14 @@ for i, row in stocks.iterrows():
             'ma30': int(ma30_val),
             'day_chg': day_chg,
             'chg': chg,
+            'chg2': chg2,
+            'chg3': chg3,
+            'chg4': chg4,
             'market_chg': mkt_chg,
-            'rel': round(chg - mkt_chg, 1),
+            'rel':  round(chg  - mkt_chg,  1),
+            'rel2': round(chg2 - mkt_chg2, 1),
+            'rel3': round(chg3 - mkt_chg3, 1),
+            'rel4': round(chg4 - mkt_chg4, 1),
             'ma5gap': ma5gap,
             'ma10gap': ma10gap,
             'ma30gap': gap,
@@ -299,6 +355,10 @@ output = {
     'updated': datetime.now().strftime('%Y-%m-%d %H:%M'),
     'kospi_chg': kospi_chg,
     'kosdaq_chg': kosdaq_chg,
+    'kospi_chgs': kospi_chgs,
+    'kosdaq_chgs': kosdaq_chgs,
+    'kospi_chart': kospi_chart,
+    'kosdaq_chart': kosdaq_chart,
     'stocks': results
 }
 with open('screener_result.json', 'w', encoding='utf-8') as f:
