@@ -84,6 +84,9 @@ th .sort-arrow { font-size: 10px; opacity: .4; margin-left: 2px; }
 th.sorted .sort-arrow { opacity: 1; color: #534AB7; }
 th.period-th { min-width: 110px; text-align: center; }
 th.period-th.sorted { background: #EEEDFE; }
+th.cap-th { text-align: center; }
+th.cap-th.sorted { background: #EEEDFE; }
+.cap-col { text-align: center; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #444; }
 td { padding: 8px 12px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; white-space: nowrap; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafaf8; }
@@ -222,6 +225,7 @@ tr:hover td { background: #fafaf8; }
       <thead>
         <tr>
           <th data-sort="name">종목 <span class="sort-arrow">↕</span></th>
+          <th class="cap-th" data-sort="cap">시가총액 <span class="sort-arrow">↕</span></th>
           <th>주봉차트</th>
           <th class="period-th sorted" data-period="0">1주 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">▼</span></span></th>
           <th class="period-th" data-period="1">2주 등락<br><span style="font-weight:400;font-size:10px">(상대강도) <span class="sort-arrow">↕</span></span></th>
@@ -241,7 +245,7 @@ tr:hover td { background: #fafaf8; }
 <script>
 // ── 상태 ─────────────────────────────────────────────────────────────────────
 let ALL = [];
-let activePeriod = 0, sortDir = -1, sortByName = false;
+let activePeriod = 0, sortDir = -1, sortKey = 'period'; // sortKey: 'period' | 'name' | 'cap' (sortDir -1 = 내림차순)
 let state = { mkt: '전체', dir: '전체', align: '전체', sector: '전체', q: '' };
 const REL_KEYS  = ['rel',  'rel2', 'rel3', 'rel4'];
 const CHG_KEYS  = ['chg',  'chg2', 'chg3', 'chg4'];
@@ -377,6 +381,12 @@ function fmtChg(v) {
   const cls = v > 0 ? 'green' : v < 0 ? 'red' : '';
   return `<span class="${cls}">${v > 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 }
+function fmtCap(v) {
+  if (!v) return '—';
+  if (v >= 1e12) return (v / 1e12).toFixed(1) + '조';
+  if (v >= 1e8)  return Math.round(v / 1e8).toLocaleString() + '억';
+  return v.toLocaleString();
+}
 function fmtAlign(s) {
   if (s.first_full_align) return '<span class="badge first">최초정배열</span>';
   if (s.full_align)       return '<span class="badge align">전체정배열</span>';
@@ -410,10 +420,10 @@ function filtered() {
 }
 
 function sorted(arr) {
-  const relKey = REL_KEYS[activePeriod];
+  const key = sortKey === 'cap' ? 'market_cap' : REL_KEYS[activePeriod];
   return [...arr].sort((a, b) => {
-    if (sortByName) return sortDir * (a.name || '').localeCompare(b.name || '', 'ko');
-    return sortDir * ((b[relKey] ?? -Infinity) - (a[relKey] ?? -Infinity));
+    if (sortKey === 'name') return sortDir * (a.name || '').localeCompare(b.name || '', 'ko');
+    return sortDir * ((a[key] ?? 0) - (b[key] ?? 0));
   });
 }
 
@@ -424,18 +434,19 @@ function render() {
   const ups = rows.filter(s => (s[relKey] ?? 0) > 0);
   const dns = rows.filter(s => (s[relKey] ?? 0) <= 0);
 
-  document.getElementById('count-label').textContent = `${rows.length}개 종목 · ${PERIOD_LABELS[activePeriod]} 상대강도 순`;
+  const sortLabel = sortKey === 'name' ? '종목명 순' : sortKey === 'cap' ? '시가총액 순' : `${PERIOD_LABELS[activePeriod]} 상대강도 순`;
+  document.getElementById('count-label').textContent = `${rows.length}개 종목 · ${sortLabel}`;
 
   let html = '';
   if (ups.length && dns.length) {
-    html += `<tr class="section-row"><td colspan="7">▲ 시장 대비 강세 (${ups.length}개)</td></tr>`;
+    html += `<tr class="section-row"><td colspan="8">▲ 시장 대비 강세 (${ups.length}개)</td></tr>`;
     ups.forEach(s => { html += rowHtml(s); });
-    html += `<tr class="section-row"><td colspan="7">▼ 시장 대비 약세 (${dns.length}개)</td></tr>`;
+    html += `<tr class="section-row"><td colspan="8">▼ 시장 대비 약세 (${dns.length}개)</td></tr>`;
     dns.forEach(s => { html += rowHtml(s); });
   } else {
     rows.forEach(s => { html += rowHtml(s); });
   }
-  if (!rows.length) html = '<tr><td colspan="7" class="empty">조건에 맞는 종목이 없습니다.</td></tr>';
+  if (!rows.length) html = '<tr><td colspan="8" class="empty">조건에 맞는 종목이 없습니다.</td></tr>';
   document.getElementById('table-body').innerHTML = html;
 
   // mobile cards
@@ -461,6 +472,7 @@ function rowHtml(s) {
         <span class="sector-tag">${s.sector || ''}</span>
       </div>
     </td>
+    <td class="cap-col">${fmtCap(s.market_cap)}</td>
     <td class="mini-chart">${mini}</td>
     ${periodCell(s, 0)}
     ${periodCell(s, 1)}
@@ -482,6 +494,7 @@ function cardHtml(s) {
         <div style="display:flex;gap:4px;margin-top:3px">
           <span class="${(s.market||'').toLowerCase()}">${s.market||''}</span>
           <span class="sector-tag">${s.sector || ''}</span>
+          <span style="font-size:11px;color:#aaa;align-self:center">시총 ${fmtCap(s.market_cap)}</span>
         </div>
       </div>
       <div style="text-align:right">${fmtAlign(s)}</div>
@@ -505,25 +518,20 @@ function cardHtml(s) {
 }
 
 function updateSortHeaders() {
-  document.querySelectorAll('#main-table th.period-th').forEach((th, i) => {
-    const isSorted = !sortByName && i === activePeriod;
-    th.classList.toggle('sorted', isSorted);
+  const mark = (th, on) => {
+    th.classList.toggle('sorted', on);
     const arrow = th.querySelector('.sort-arrow');
-    if (arrow) arrow.textContent = isSorted ? (sortDir === -1 ? '▼' : '▲') : '↕';
-  });
-  const nameTh = document.querySelector('#main-table th[data-sort="name"]');
-  if (nameTh) {
-    nameTh.classList.toggle('sorted', sortByName);
-    const arrow = nameTh.querySelector('.sort-arrow');
-    if (arrow) arrow.textContent = sortByName ? (sortDir === -1 ? '▼' : '▲') : '↕';
-  }
+    if (arrow) arrow.textContent = on ? (sortDir === -1 ? '▼' : '▲') : '↕';
+  };
+  document.querySelectorAll('#main-table th.period-th').forEach((th, i) => mark(th, sortKey === 'period' && i === activePeriod));
+  document.querySelectorAll('#main-table th[data-sort]').forEach(th => mark(th, sortKey === th.dataset.sort));
 }
 
 // ── 기간 탭 / 컬럼 클릭 ──────────────────────────────────────────────────────
 document.querySelectorAll('#period-tabs .period-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     const i = parseInt(tab.dataset.period);
-    activePeriod = i; sortDir = -1; sortByName = false;
+    activePeriod = i; sortDir = -1; sortKey = 'period';
     document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
     syncMktPeriods(i);
     render();
@@ -532,18 +540,21 @@ document.querySelectorAll('#period-tabs .period-tab').forEach(tab => {
 
 document.querySelectorAll('#main-table th.period-th').forEach((th, i) => {
   th.addEventListener('click', () => {
-    if (!sortByName && activePeriod === i) { sortDir *= -1; }
-    else { activePeriod = i; sortDir = -1; sortByName = false; }
+    if (sortKey === 'period' && activePeriod === i) { sortDir *= -1; }
+    else { activePeriod = i; sortDir = -1; sortKey = 'period'; }
     document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
     syncMktPeriods(i);
     render();
   });
 });
 
-document.querySelector('#main-table th[data-sort="name"]').addEventListener('click', () => {
-  if (sortByName) { sortDir *= -1; }
-  else { sortByName = true; sortDir = 1; }
-  render();
+document.querySelectorAll('#main-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.sort;
+    if (sortKey === k) { sortDir *= -1; }
+    else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    render();
+  });
 });
 
 function syncMktPeriods(i) {
@@ -556,7 +567,7 @@ function syncMktPeriods(i) {
   document.querySelectorAll(`#${id} .mkt-period`).forEach(p => {
     p.addEventListener('click', () => {
       const i = parseInt(p.dataset.i);
-      activePeriod = i; sortDir = -1; sortByName = false;
+      activePeriod = i; sortDir = -1; sortKey = 'period';
       document.querySelectorAll('#period-tabs .period-tab').forEach((t,j) => t.classList.toggle('active', j===i));
       syncMktPeriods(i);
       render();
@@ -633,7 +644,7 @@ function init() {
       render();
     })
     .catch(() => {
-      document.getElementById('table-body').innerHTML = '<tr><td colspan="7" class="empty">데이터를 불러올 수 없습니다. screener_result.json을 확인해주세요.</td></tr>';
+      document.getElementById('table-body').innerHTML = '<tr><td colspan="8" class="empty">데이터를 불러올 수 없습니다. screener_result.json을 확인해주세요.</td></tr>';
     });
 }
 
